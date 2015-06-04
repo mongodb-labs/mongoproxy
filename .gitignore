@@ -1,0 +1,12 @@
+*.swp
+*.exe
+*.pyc
+
+bin/
+
+vendor/
+
+.gopath
+.godeps
+
+coverage.out

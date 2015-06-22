@@ -1,4 +1,4 @@
-// Package convert contains functions to convert variables of one type into another
+// Package convert contains functions to convert variables of one type into another.
 package convert
 
 import (

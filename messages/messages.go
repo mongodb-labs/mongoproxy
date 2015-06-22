@@ -6,6 +6,16 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// constants representing the types of request structs supported by proxy core.
+const (
+	CommandType string = "command"
+	FindType           = "find"
+	InsertType         = "insert"
+	UpdateType         = "update"
+	DeleteType         = "delete"
+	GetMoreType        = "getMore"
+)
+
 // a struct to represent a wire protocol message header.
 type MsgHeader struct {
 	MessageLength int32
@@ -25,7 +35,7 @@ type Command struct {
 }
 
 func (c Command) Type() string {
-	return "command"
+	return CommandType
 }
 
 // GetArg takes the name of an argument for the command and returns the
@@ -55,7 +65,7 @@ type Find struct {
 }
 
 func (f Find) Type() string {
-	return "find"
+	return FindType
 }
 
 // the struct for the 'insert' command
@@ -67,7 +77,7 @@ type Insert struct {
 }
 
 func (i Insert) Type() string {
-	return "insert"
+	return InsertType
 }
 
 type SingleUpdate struct {
@@ -86,7 +96,7 @@ type Update struct {
 }
 
 func (u Update) Type() string {
-	return "update"
+	return UpdateType
 }
 
 type SingleDelete struct {
@@ -103,7 +113,7 @@ type Delete struct {
 }
 
 func (d Delete) Type() string {
-	return "delete"
+	return DeleteType
 }
 
 // struct for 'getMore' command
@@ -115,5 +125,5 @@ type GetMore struct {
 }
 
 func (g GetMore) Type() string {
-	return "getMore"
+	return GetMoreType
 }

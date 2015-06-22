@@ -24,7 +24,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 
 	Log(DEBUG, req.Type())
 	switch req.Type() {
-	case "find":
+	case messages.FindType:
 		opq := req.(messages.Find)
 		Log(INFO, "%#v\n", opq)
 
@@ -42,7 +42,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.Collection = opq.Collection
 		res.Write(r)
 		break
-	case "getMore":
+	case messages.GetMoreType:
 		opg := req.(messages.GetMore)
 		Log(INFO, "%#v\n", opg)
 		r := messages.GetMoreResponse{}
@@ -55,7 +55,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.Documents = make([]bson.D, 0)
 		res.Write(r)
 		break
-	case "insert":
+	case messages.InsertType:
 		opi := req.(messages.Insert)
 		Log(INFO, "%#v\n", opi)
 
@@ -73,7 +73,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(r)
 		break
-	case "update":
+	case messages.UpdateType:
 		opu := req.(messages.Update)
 		r := messages.UpdateResponse{}
 		Log(INFO, "%#v\n", opu)
@@ -83,7 +83,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		// res.Write(r)
 		res.Error(0, "not supported")
 		break
-	case "delete":
+	case messages.DeleteType:
 		opd := req.(messages.Delete)
 		Log(INFO, "%#v\n", opd)
 		r := messages.DeleteResponse{}
@@ -91,7 +91,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(r)
 		res.Error(0, "not supported")
-	case "command":
+	case messages.CommandType:
 		command := req.(messages.Command)
 		Log(INFO, "%#v\n", command)
 

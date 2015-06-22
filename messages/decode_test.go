@@ -236,9 +236,9 @@ func TestProcessHeader(t *testing.T) {
 	})
 }
 
-func TestProcessFind(t *testing.T) {
+func TestCreateFind(t *testing.T) {
 	Convey("Process invalid find", t, func() {
-		_, err := processFind("test", bson.M{})
+		_, err := createFind("test", bson.M{})
 		So(err, ShouldNotBeNil)
 	})
 }

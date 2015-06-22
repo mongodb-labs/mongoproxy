@@ -12,6 +12,76 @@ import (
 	"strings"
 )
 
+// convertToBSONMapSlice converts an []interface{}, []bson.D, or []bson.M slice to a []bson.M
+// slice (assuming that all contents are either bson.M or bson.D objects)
+func convertToBSONMapSlice(input interface{}) ([]bson.M, error) {
+
+	inputBSONM, ok := input.([]bson.M)
+	if ok {
+		return inputBSONM, nil
+	}
+
+	inputBSOND, ok := input.([]bson.D)
+	if ok {
+		// just convert all of the bson.D documents to bson.M
+		d := make([]bson.M, len(inputBSOND))
+		for i := 0; i < len(inputBSOND); i++ {
+			doc := inputBSOND[i]
+			d[i] = doc.Map()
+		}
+		return d, nil
+	}
+
+	inputInterface, ok := input.([]interface{})
+	if ok {
+		d := make([]bson.M, len(inputInterface))
+		for i := 0; i < len(inputInterface); i++ {
+			doc := inputInterface[i]
+			docM, ok2 := doc.(bson.M)
+			if !ok2 {
+				// check if it's a bson.D
+				docD, ok3 := doc.(bson.D)
+				if ok3 {
+					docM = docD.Map()
+				} else {
+					// error
+					return nil, fmt.Errorf("Slice contents aren't BSON objects")
+				}
+			}
+
+			d[i] = docM
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported input")
+}
+
+// convertToBSONDocSlice converts an []interface{} to a []bson.D slice
+// assuming contents are bson.D objects
+func convertToBSONDocSlice(input interface{}) ([]bson.D, error) {
+	inputBSOND, ok := input.([]bson.D)
+	if ok {
+		return inputBSOND, nil
+	}
+
+	inputInterface, ok := input.([]interface{})
+	if ok {
+		d := make([]bson.D, len(inputInterface))
+		for i := 0; i < len(inputInterface); i++ {
+			doc := inputInterface[i]
+			docD, ok2 := doc.(bson.D)
+			if !ok2 {
+				return nil, fmt.Errorf("Slice contents aren't BSON objects")
+			}
+			d[i] = docD
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported input")
+}
+
 func splitCommandOpQuery(q bson.D) (string, bson.M) {
 	commandName := q[0].Name
 
@@ -21,17 +91,14 @@ func splitCommandOpQuery(q bson.D) (string, bson.M) {
 	// name, as some of the commands have an important argument attached
 	// to the command definition as well.
 	for i := 0; i < len(q); i++ {
-		arg := q[i].Name
-		argV := q[i].Value
-
-		args[arg] = argV
+		args[q[i].Name] = q[i].Value
 	}
 
 	return commandName, args
 }
 
 // parseNamespace splits a namespace string into the database and collection.
-// the first return value is the database, the second the collection. An error
+// The first return value is the database, the second, the collection. An error
 // is returned if either the database or the collection doesn't exist.
 func parseNamespace(namespace string) (string, string, error) {
 	index := strings.Index(namespace, ".")
@@ -52,17 +119,16 @@ func parseNamespace(namespace string) (string, string, error) {
 	return database, collection, nil
 }
 
-func processCommand(commandName string, database string, args bson.M) Command {
+func createCommand(commandName string, database string, args bson.M) Command {
 	c := Command{
 		CommandName: commandName,
 		Database:    database,
 		Args:        args,
-		Docs:        make([]bson.D, 0),
 	}
 	return c
 }
 
-func processFind(database string, args bson.M) (Find, error) {
+func createFind(database string, args bson.M) (Find, error) {
 
 	c := args["find"]
 	collection, ok := c.(string)
@@ -88,7 +154,7 @@ func processFind(database string, args bson.M) (Find, error) {
 	return f, nil
 }
 
-func processInsert(database string, args bson.M) (Insert, error) {
+func createInsert(database string, args bson.M) (Insert, error) {
 	c := args["insert"]
 	collection, ok := c.(string)
 	if !ok {
@@ -111,7 +177,7 @@ func processInsert(database string, args bson.M) (Insert, error) {
 	return insert, nil
 }
 
-func processDelete(database string, args bson.M) (Delete, error) {
+func createDelete(database string, args bson.M) (Delete, error) {
 	c := args["delete"]
 	collection, ok := c.(string)
 	if !ok {
@@ -125,7 +191,7 @@ func processDelete(database string, args bson.M) (Delete, error) {
 		return Delete{}, fmt.Errorf("Delete command has no deletes.")
 	}
 
-	deletes := make([]SingleDelete, 0)
+	deletes := make([]SingleDelete, len(argsDeletes))
 	for i := 0; i < len(argsDeletes); i++ {
 		d := argsDeletes[i]
 		singleDelete := SingleDelete{
@@ -133,7 +199,7 @@ func processDelete(database string, args bson.M) (Delete, error) {
 			Limit:    convert.ToInt32(d["limit"]),
 		}
 
-		deletes = append(deletes, singleDelete)
+		deletes[i] = singleDelete
 	}
 
 	delObj := Delete{
@@ -146,7 +212,7 @@ func processDelete(database string, args bson.M) (Delete, error) {
 	return delObj, nil
 }
 
-func processUpdate(database string, args bson.M) (Update, error) {
+func createUpdate(database string, args bson.M) (Update, error) {
 
 	c := args["update"]
 	collection, ok := c.(string)
@@ -154,7 +220,6 @@ func processUpdate(database string, args bson.M) (Update, error) {
 		// we have issues
 		return Update{}, fmt.Errorf("Update command has no collection.")
 	}
-	updates := make([]SingleUpdate, 0)
 
 	argsUpdatesRaw := args["updates"]
 	argsUpdates, ok := argsUpdatesRaw.([]bson.M)
@@ -162,6 +227,7 @@ func processUpdate(database string, args bson.M) (Update, error) {
 		return Update{}, fmt.Errorf("Update command has no updates.")
 	}
 
+	updates := make([]SingleUpdate, len(argsUpdates))
 	for i := 0; i < len(argsUpdates); i++ {
 		u := argsUpdates[i]
 		singleUpdate := SingleUpdate{
@@ -171,7 +237,7 @@ func processUpdate(database string, args bson.M) (Update, error) {
 			Multi:    convert.ToBool(u["multi"]),
 		}
 
-		updates = append(updates, singleUpdate)
+		updates[i] = singleUpdate
 	}
 
 	update := Update{
@@ -184,7 +250,7 @@ func processUpdate(database string, args bson.M) (Update, error) {
 	return update, nil
 }
 
-func processGetMore(database string, args bson.M) (GetMore, error) {
+func createGetMore(database string, args bson.M) (GetMore, error) {
 	c := args["collection"]
 	collection, ok := c.(string)
 	if !ok {
@@ -233,52 +299,61 @@ func processHeader(reader io.Reader) (MsgHeader, error) {
 
 // anything with OpCode 2004 goes here
 func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
-	// FLAGS
+	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading flags: %v\n", err)
+		return Command{}, fmt.Errorf("error reading flags: %v", err)
 	}
 
-	// DATABASE AND COLLECTIONS
-	maxStringBytes := header.MessageLength - 16 - 4
+	// namespace
+
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength - // length of the whole wire protocol message
+		16 - // bytes representing the header
+		4 // bytes representing the flags
 	numNamespaceBytes, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading null terminated string: %v\n", err)
+		return Command{}, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 	database, collection, err := parseNamespace(namespace)
 
 	if err != nil {
-		return Command{}, fmt.Errorf("error parsing namespace: %v\n", err)
+		return Command{}, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
-	// NUMBER TO SKIP
+	// numberToSkip
 	skip, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading NumberToSkip: %v\n", err)
+		return Command{}, fmt.Errorf("error reading NumberToSkip: %v", err)
 	}
 
-	// NUMBER TO RETURN
+	// numberToReturn
 	limit, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading NumberToReturn: %v\n", err)
+		return Command{}, fmt.Errorf("error reading NumberToReturn: %v", err)
 	}
 
-	// QUERY
+	// query
 	var docSize int32
 	docSize, q, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading query: %v\n", err)
+		return Command{}, fmt.Errorf("error reading query: %v", err)
 	}
-	totalBytesRead := 16 + 4 + numNamespaceBytes + 4 + 4 + docSize
+	totalBytesRead := 16 + // bytes representing the header
+		4 + // bytes representing flags
+		numNamespaceBytes + // bytes representing the namespace
+		4 + // bytes representing numberToSkip (skip)
+		4 + // bytes representing numberToReturn (limit)
+		docSize // bytes representing the query
 
-	// PROJECTION
+	// optional projection
 	var projection bson.D
-	projection = nil
 	if totalBytesRead < header.MessageLength {
 		_, projection, err = buffer.ReadDocument(reader)
 		if err != nil {
 			if err != io.EOF {
-				return Find{}, fmt.Errorf("error reading projection: %v\n", err)
+				return Find{}, fmt.Errorf("error reading projection: %v", err)
 			}
 		}
 	}
@@ -292,22 +367,15 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		case "insert":
 			// convert documents to an array of bson.D so that the struct
 			// knows what to do with them.
-			inserts, ok := args["documents"].([]interface{})
-			if ok {
-				d := make([]bson.D, len(inserts))
-				for i := 0; i < len(inserts); i++ {
-					doc := inserts[i]
-					docD, ok2 := doc.(bson.D)
-					if !ok2 {
-						docD = bson.D{}
-					}
+			i, err := convertToBSONDocSlice(args["documents"])
 
-					d[i] = docD
-				}
-
-				args["documents"] = d
+			if err != nil {
+				return nil, err
 			}
-			c, err = processInsert(database, args)
+
+			args["documents"] = i
+
+			c, err = createInsert(database, args)
 			if err != nil {
 				return nil, err
 			}
@@ -315,35 +383,35 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		case "update":
 			// convert updates to an array of bson.M so that the struct
 			// knows what to do with them.
-			updates, ok := args["updates"].([]interface{})
-			if ok {
-				u := make([]bson.M, len(updates))
-				for i := 0; i < len(updates); i++ {
-					doc := updates[i]
-					docD, ok2 := doc.(bson.D)
-					if !ok2 {
-						docD = bson.D{}
-					}
+			u, err := convertToBSONMapSlice(args["updates"])
 
-					u[i] = docD.Map()
-				}
-
-				args["updates"] = u
+			if err != nil {
+				return nil, err
 			}
 
-			c, err = processUpdate(database, args)
+			args["updates"] = u
+
+			c, err = createUpdate(database, args)
 			if err != nil {
 				return nil, err
 			}
 			break
 		case "delete":
-			c, err = processDelete(database, args)
+
+			d, err := convertToBSONMapSlice(args["deletes"])
+			if err != nil {
+				return nil, err
+			}
+
+			args["deletes"] = d
+
+			c, err = createDelete(database, args)
 			if err != nil {
 				return nil, err
 			}
 			break
 		default:
-			c = processCommand(cName, database, args)
+			c = createCommand(cName, database, args)
 		}
 
 		return c, nil
@@ -366,11 +434,9 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 		// the actual query
 		args["filter"] = q
-		if projection != nil {
-			args["projection"] = projection
-		}
+		args["projection"] = projection
 
-		f, err := processFind(database, args)
+		f, err := createFind(database, args)
 		if err != nil {
 			return nil, err
 		}
@@ -381,36 +447,41 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 // OpCode 2001
 func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
-	buffer.ReadInt32LE(reader) // the zero
+	buffer.ReadInt32LE(reader) // the zero (not used in wire protocol)
 
-	// DATABASE AND COLLECTIONS
-	maxStringBytes := header.MessageLength - 16 - 4
+	// namespace
+
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength -
+		16 - // bytes representing the header
+		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading null terminated string: %v\n", err)
+		return Update{}, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Update{}, fmt.Errorf("error parsing namespace: %v\n", err)
+		return Update{}, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
-	// FLAGS
+	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading flags: %v\n", err)
+		return Update{}, fmt.Errorf("error reading flags: %v", err)
 	}
 
-	// SELECTOR
+	// selector
 	_, selector, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading selector: %v\n", err)
+		return Update{}, fmt.Errorf("error reading selector: %v", err)
 	}
 
-	// UPDATE
+	// update
 	_, updator, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading selector: %v\n", err)
+		return Update{}, fmt.Errorf("error reading selector: %v", err)
 	}
 
 	// create a proper update command
@@ -425,36 +496,41 @@ func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
 	updates = append(updates, updateObj)
 	args["updates"] = updates
 
-	return processUpdate(database, args)
+	return createUpdate(database, args)
 }
 
 // OpCode 2002
 func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error reading flags: %v\n", err)
+		return Insert{}, fmt.Errorf("error reading flags: %v", err)
 	}
 
-	// DATABASE AND COLLECTIONS
-	maxStringBytes := header.MessageLength - 16 - 4
+	// namespace
+
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength -
+		16 - // bytes representing the header
+		4 // bytes representing flags
 	numNamespaceBytes, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error reading null terminated string: %v\n", err)
+		return Insert{}, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error parsing namespace: %v\n", err)
+		return Insert{}, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
-	// DOCUMENTS
+	// documents to insert
 	totalBytesRead := 16 + 4 + numNamespaceBytes
 	docs := make([]bson.D, 0)
 	for totalBytesRead < header.MessageLength {
 		n, doc, err := buffer.ReadDocument(reader)
 		if err != nil {
 			if err != io.EOF {
-				return Insert{}, fmt.Errorf("error reading document: %v\n", err)
+				return Insert{}, fmt.Errorf("error reading document: %v", err)
 			}
 		}
 		docs = append(docs, doc)
@@ -466,36 +542,41 @@ func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 	args["ordered"] = !convert.ReadBit32LE(flags, 0)
 	args["documents"] = docs
 
-	return processInsert(database, args)
+	return createInsert(database, args)
 
 }
 
 // OpCode 2005
 func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
-	buffer.ReadInt32LE(reader) // the zero
+	buffer.ReadInt32LE(reader) // the zero (not used in wire protocol)
 
-	// DATABASE AND COLLECTIONS
-	maxStringBytes := header.MessageLength - 16 - 4
+	// namespace
+
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength -
+		16 - // bytes representing the header
+		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error reading null terminated string: %v\n", err)
+		return GetMore{}, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing namespace: %v\n", err)
+		return GetMore{}, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
-	// NUM TO RETURN
+	// numToReturn
 	batchSize, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing batch size: %v\n", err)
+		return GetMore{}, fmt.Errorf("error parsing batch size: %v", err)
 	}
 
-	// CURSOR ID
+	// cursorID
 	cursorID, err := buffer.ReadInt64LE(reader)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing cursor ID: %v\n", err)
+		return GetMore{}, fmt.Errorf("error parsing cursor ID: %v", err)
 	}
 
 	args := bson.M{}
@@ -503,35 +584,40 @@ func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
 	args["collection"] = collection
 	args["batchSize"] = batchSize
 
-	return processGetMore(database, args)
+	return createGetMore(database, args)
 }
 
 // OpCode 2006
 func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
-	buffer.ReadInt32LE(reader) // the zero
+	buffer.ReadInt32LE(reader) // the zero (not used in wire protocol)
 
-	// DATABASE AND COLLECTIONS
-	maxStringBytes := header.MessageLength - 16 - 4
+	// namespace
+
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength -
+		16 - // bytes representing the header
+		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading null terminated string: %v\n", err)
+		return Delete{}, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error parsing namespace: %v\n", err)
+		return Delete{}, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
-	// FLAGS
+	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading flags: %v\n", err)
+		return Delete{}, fmt.Errorf("error reading flags: %v", err)
 	}
 
-	// SELECTOR
+	// selector
 	_, selector, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading selector: %v\n", err)
+		return Delete{}, fmt.Errorf("error reading selector: %v", err)
 	}
 
 	args := bson.M{}
@@ -549,7 +635,7 @@ func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 	deletes[0] = delObj
 	args["deletes"] = deletes
 
-	return processDelete(database, args)
+	return createDelete(database, args)
 }
 
 // Decodes a wire protocol message from a connection into a Requester to pass

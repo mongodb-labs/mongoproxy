@@ -10,13 +10,16 @@ import (
 	"io"
 )
 
-// ReadDocument reads a BSON ordered document from a buffer, and returns the
+// ReadDocument reads a BSON ordered document from a reader, and returns the
 // number of bytes in the document and the document itself in bson.D format.
 func ReadDocument(reader io.Reader) (docSize int32, document bson.D, err error) {
 	// Read the first 4 bytes from the connection
 	docSize, err = ReadInt32LE(reader)
 	if err != nil {
 		return 0, nil, fmt.Errorf("error reading docsize: %v", err)
+	}
+	if docSize < 4 {
+		return 0, nil, fmt.Errorf("docSize too small")
 	}
 	documentBuffer := make([]byte, docSize-4)
 	n, err := reader.Read(documentBuffer)
@@ -27,8 +30,10 @@ func ReadDocument(reader io.Reader) (docSize int32, document bson.D, err error) 
 		return 0, nil, fmt.Errorf("insufficient bytes read: %v instead of %v", n, docSize-4)
 	}
 	if n == 0 {
-		if docSize == 0 {
-			return 0, bson.D{}, nil
+		// if the document size was only the size of the four header bytes for whatever reason,
+		// we have an empty document. We still read the 4 bytes, though.
+		if docSize == 4 {
+			return docSize, bson.D{}, nil
 		}
 		// erroneously read an empty document
 		return 0, nil, io.EOF
@@ -46,7 +51,7 @@ func ReadDocument(reader io.Reader) (docSize int32, document bson.D, err error) 
 	return
 }
 
-// ReadInt32LE reads a 32-bit integer from the buffer with little endian encoding.
+// ReadInt32LE reads a 32-bit integer from a reader with little endian encoding.
 func ReadInt32LE(reader io.Reader) (int32, error) {
 	// Read the first 4 bytes from the connection
 	buffer := make([]byte, 4)
@@ -60,7 +65,7 @@ func ReadInt32LE(reader io.Reader) (int32, error) {
 	return ConvertToInt32LE(buffer), nil
 }
 
-// ReadInt64LE reads a 64-bit long from the buffer with little endian encoding.
+// ReadInt64LE reads a 64-bit long from a reader with little endian encoding.
 func ReadInt64LE(reader io.Reader) (int64, error) {
 	// Read the first 4 bytes from the connection
 	buffer := make([]byte, 8)
@@ -74,7 +79,7 @@ func ReadInt64LE(reader io.Reader) (int64, error) {
 	return ConvertToInt64LE(buffer), nil
 }
 
-// ReadNullTerminatedString continuously reads bytes from a buffer until
+// ReadNullTerminatedString continuously reads bytes from a reader until
 // it hits the null byte, or it reads in maxSize bytes. An error is returned if
 // the string read is longer than maxSize bytes, or if there were any errors
 // reading from the buffer. If there are no errors, it returns the number of

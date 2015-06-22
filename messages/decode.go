@@ -119,8 +119,9 @@ func parseNamespace(namespace string) (string, string, error) {
 	return database, collection, nil
 }
 
-func createCommand(commandName string, database string, args bson.M) Command {
+func createCommand(header MsgHeader, commandName string, database string, args bson.M) Command {
 	c := Command{
+		RequestID:   header.RequestID,
 		CommandName: commandName,
 		Database:    database,
 		Args:        args,
@@ -128,7 +129,7 @@ func createCommand(commandName string, database string, args bson.M) Command {
 	return c
 }
 
-func createFind(database string, args bson.M) (Find, error) {
+func createFind(header MsgHeader, database string, args bson.M) (Find, error) {
 
 	c := args["find"]
 	collection, ok := c.(string)
@@ -138,6 +139,7 @@ func createFind(database string, args bson.M) (Find, error) {
 	}
 
 	f := Find{
+		RequestID:       header.RequestID,
 		Database:        database,
 		Collection:      collection,
 		Filter:          convert.ToBSONDoc(args["filter"]),
@@ -154,7 +156,7 @@ func createFind(database string, args bson.M) (Find, error) {
 	return f, nil
 }
 
-func createInsert(database string, args bson.M) (Insert, error) {
+func createInsert(header MsgHeader, database string, args bson.M) (Insert, error) {
 	c := args["insert"]
 	collection, ok := c.(string)
 	if !ok {
@@ -168,6 +170,7 @@ func createInsert(database string, args bson.M) (Insert, error) {
 		return Insert{}, fmt.Errorf("Insert command has no documents.")
 	}
 	insert := Insert{
+		RequestID:  header.RequestID,
 		Database:   database,
 		Collection: collection,
 		Documents:  documents,
@@ -177,7 +180,7 @@ func createInsert(database string, args bson.M) (Insert, error) {
 	return insert, nil
 }
 
-func createDelete(database string, args bson.M) (Delete, error) {
+func createDelete(header MsgHeader, database string, args bson.M) (Delete, error) {
 	c := args["delete"]
 	collection, ok := c.(string)
 	if !ok {
@@ -203,6 +206,7 @@ func createDelete(database string, args bson.M) (Delete, error) {
 	}
 
 	delObj := Delete{
+		RequestID:  header.RequestID,
 		Database:   database,
 		Collection: collection,
 		Deletes:    deletes,
@@ -212,7 +216,7 @@ func createDelete(database string, args bson.M) (Delete, error) {
 	return delObj, nil
 }
 
-func createUpdate(database string, args bson.M) (Update, error) {
+func createUpdate(header MsgHeader, database string, args bson.M) (Update, error) {
 
 	c := args["update"]
 	collection, ok := c.(string)
@@ -241,6 +245,7 @@ func createUpdate(database string, args bson.M) (Update, error) {
 	}
 
 	update := Update{
+		RequestID:  header.RequestID,
 		Database:   database,
 		Collection: collection,
 		Updates:    updates,
@@ -250,7 +255,7 @@ func createUpdate(database string, args bson.M) (Update, error) {
 	return update, nil
 }
 
-func createGetMore(database string, args bson.M) (GetMore, error) {
+func createGetMore(header MsgHeader, database string, args bson.M) (GetMore, error) {
 	c := args["collection"]
 	collection, ok := c.(string)
 	if !ok {
@@ -258,6 +263,7 @@ func createGetMore(database string, args bson.M) (GetMore, error) {
 		return GetMore{}, fmt.Errorf("GetMore command has no collection.")
 	}
 	g := GetMore{
+		RequestID:  header.RequestID,
 		Database:   database,
 		Collection: collection,
 		BatchSize:  convert.ToInt32(args["batchSize"]),
@@ -375,7 +381,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 			args["documents"] = i
 
-			c, err = createInsert(database, args)
+			c, err = createInsert(header, database, args)
 			if err != nil {
 				return nil, err
 			}
@@ -391,7 +397,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 			args["updates"] = u
 
-			c, err = createUpdate(database, args)
+			c, err = createUpdate(header, database, args)
 			if err != nil {
 				return nil, err
 			}
@@ -405,13 +411,13 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 			args["deletes"] = d
 
-			c, err = createDelete(database, args)
+			c, err = createDelete(header, database, args)
 			if err != nil {
 				return nil, err
 			}
 			break
 		default:
-			c = createCommand(cName, database, args)
+			c = createCommand(header, cName, database, args)
 		}
 
 		return c, nil
@@ -436,7 +442,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		args["filter"] = q
 		args["projection"] = projection
 
-		f, err := createFind(database, args)
+		f, err := createFind(header, database, args)
 		if err != nil {
 			return nil, err
 		}
@@ -496,7 +502,7 @@ func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
 	updates = append(updates, updateObj)
 	args["updates"] = updates
 
-	return createUpdate(database, args)
+	return createUpdate(header, database, args)
 }
 
 // OpCode 2002
@@ -542,7 +548,7 @@ func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 	args["ordered"] = !convert.ReadBit32LE(flags, 0)
 	args["documents"] = docs
 
-	return createInsert(database, args)
+	return createInsert(header, database, args)
 
 }
 
@@ -584,7 +590,7 @@ func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
 	args["collection"] = collection
 	args["batchSize"] = batchSize
 
-	return createGetMore(database, args)
+	return createGetMore(header, database, args)
 }
 
 // OpCode 2006
@@ -635,7 +641,7 @@ func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 	deletes[0] = delObj
 	args["deletes"] = deletes
 
-	return createDelete(database, args)
+	return createDelete(header, database, args)
 }
 
 // Decodes a wire protocol message from a connection into a Requester to pass

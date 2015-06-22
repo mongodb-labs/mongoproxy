@@ -35,6 +35,5 @@ func (r *ModuleResponse) Write(writer ResponseWriter) {
 }
 
 func (r *ModuleResponse) Error(code int32, message string) {
-	e := &ResponderError{code, message}
-	r.CommandError = e
+	r.CommandError = &ResponderError{code, message}
 }

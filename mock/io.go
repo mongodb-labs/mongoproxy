@@ -15,7 +15,7 @@ type MockIO struct {
 	pos    int
 }
 
-func (m *MockIO) New() {
+func (m *MockIO) Reset() {
 	m.pos = 0
 }
 

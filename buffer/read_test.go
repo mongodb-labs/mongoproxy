@@ -18,7 +18,7 @@ func TestReadDocument(t *testing.T) {
 			m := mock.MockIO{
 				Input:  bytes,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			docSize, d, err := ReadDocument(&m)
 			So(docSize, ShouldEqual, len(bytes))
@@ -33,7 +33,7 @@ func TestReadDocument(t *testing.T) {
 			m := mock.MockIO{
 				Input:  bytes,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			docSize, d, err := ReadDocument(&m)
 			So(docSize, ShouldEqual, 4)
@@ -48,7 +48,7 @@ func TestReadDocument(t *testing.T) {
 			m := mock.MockIO{
 				Input:  bytes,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			docSize, d, err := ReadDocument(&m)
 			So(docSize, ShouldEqual, 0)
@@ -68,7 +68,7 @@ func TestRead32BitLE(t *testing.T) {
 			m := mock.MockIO{
 				Input:  bs,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			val, err := ReadInt32LE(&m)
 			So(val, ShouldEqual, values[i])
@@ -87,7 +87,7 @@ func TestRead64BitLE(t *testing.T) {
 			m := mock.MockIO{
 				Input:  bs,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			val, err := ReadInt64LE(&m)
 			So(val, ShouldEqual, values[i])
@@ -106,14 +106,14 @@ func TestReadNullTerminatedString(t *testing.T) {
 			m := mock.MockIO{
 				Input:  sNull,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			n, str, err := ReadNullTerminatedString(&m, 999)
 			So(n, ShouldEqual, len(sNull))
 			So(str, ShouldEqual, s)
 			So(err, ShouldBeNil)
 
-			m.New()
+			m.Reset()
 
 			n, str, err = ReadNullTerminatedString(&m, int32(len(sNull)))
 			So(n, ShouldEqual, len(sNull))
@@ -128,14 +128,14 @@ func TestReadNullTerminatedString(t *testing.T) {
 			m := mock.MockIO{
 				Input:  sNull,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			n, str, err := ReadNullTerminatedString(&m, 1)
 			So(n, ShouldEqual, 0)
 			So(str, ShouldEqual, "")
 			So(err, ShouldNotBeNil)
 
-			m.New()
+			m.Reset()
 
 			n, str, err = ReadNullTerminatedString(&m, int32(len(sNull))-1)
 			So(n, ShouldEqual, 0)
@@ -150,7 +150,7 @@ func TestReadNullTerminatedString(t *testing.T) {
 			m := mock.MockIO{
 				Input:  sNull,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			n, str, err := ReadNullTerminatedString(&m, 999)
 			So(n, ShouldEqual, 0)

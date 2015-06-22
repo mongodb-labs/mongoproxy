@@ -27,6 +27,7 @@ type MsgHeader struct {
 // struct for a generic command, the default Requester sent from proxy
 // core to modules
 type Command struct {
+	RequestID   int32
 	CommandName string
 	Database    string
 	Args        bson.M
@@ -36,6 +37,10 @@ type Command struct {
 
 func (c Command) Type() string {
 	return CommandType
+}
+
+func (c Command) ID() int32 {
+	return c.RequestID
 }
 
 // GetArg takes the name of an argument for the command and returns the
@@ -50,6 +55,7 @@ func (c Command) GetArg(arg string) interface{} {
 
 // the struct for the 'find' command.
 type Find struct {
+	RequestID       int32
 	Database        string
 	Collection      string
 	Filter          bson.D
@@ -68,8 +74,13 @@ func (f Find) Type() string {
 	return FindType
 }
 
+func (f Find) ID() int32 {
+	return f.RequestID
+}
+
 // the struct for the 'insert' command
 type Insert struct {
+	RequestID  int32
 	Database   string
 	Collection string
 	Documents  []bson.D
@@ -78,6 +89,10 @@ type Insert struct {
 
 func (i Insert) Type() string {
 	return InsertType
+}
+
+func (i Insert) ID() int32 {
+	return i.RequestID
 }
 
 type SingleUpdate struct {
@@ -89,6 +104,7 @@ type SingleUpdate struct {
 
 // the struct for the 'update' command
 type Update struct {
+	RequestID  int32
 	Database   string
 	Collection string
 	Updates    []SingleUpdate
@@ -99,6 +115,10 @@ func (u Update) Type() string {
 	return UpdateType
 }
 
+func (u Update) ID() int32 {
+	return u.RequestID
+}
+
 type SingleDelete struct {
 	Selector bson.D
 	Limit    int32
@@ -106,6 +126,7 @@ type SingleDelete struct {
 
 // struct for 'delete' command
 type Delete struct {
+	RequestID  int32
 	Database   string
 	Collection string
 	Deletes    []SingleDelete
@@ -115,9 +136,13 @@ type Delete struct {
 func (d Delete) Type() string {
 	return DeleteType
 }
+func (d Delete) ID() int32 {
+	return d.RequestID
+}
 
 // struct for 'getMore' command
 type GetMore struct {
+	RequestID  int32
 	Database   string
 	CursorID   int64
 	Collection string
@@ -126,4 +151,8 @@ type GetMore struct {
 
 func (g GetMore) Type() string {
 	return GetMoreType
+}
+
+func (g GetMore) ID() int32 {
+	return g.RequestID
 }

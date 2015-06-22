@@ -210,7 +210,7 @@ func TestProcessHeader(t *testing.T) {
 			m := mock.MockIO{
 				Input:  make([]byte, 0),
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			header, err := processHeader(&m)
 
@@ -222,7 +222,7 @@ func TestProcessHeader(t *testing.T) {
 			m := mock.MockIO{
 				Input:  make([]byte, 12),
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			header, err := processHeader(&m)
 
@@ -238,7 +238,7 @@ func TestProcessHeader(t *testing.T) {
 
 func TestCreateFind(t *testing.T) {
 	Convey("Process invalid find", t, func() {
-		_, err := createFind("test", bson.M{})
+		_, err := createFind(MsgHeader{}, "test", bson.M{})
 		So(err, ShouldNotBeNil)
 	})
 }
@@ -254,7 +254,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				So(err, ShouldBeNil)
@@ -272,7 +272,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				So(err, ShouldBeNil)
@@ -304,7 +304,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				fmt.Printf("%v\n", request)
@@ -315,7 +315,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				fmt.Printf("%v\n", request)
@@ -329,7 +329,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				_, _, err := Decode(&m)
 				So(err, ShouldNotBeNil)
@@ -340,7 +340,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				fmt.Printf("%v\n", request)
@@ -352,7 +352,7 @@ func TestDecodeOpQuery(t *testing.T) {
 				m := mock.MockIO{
 					Input:  input,
 					Output: make([]byte, 0)}
-				m.New()
+				m.Reset()
 
 				request, _, err := Decode(&m)
 				fmt.Printf("%v\n", request)
@@ -364,7 +364,7 @@ func TestDecodeOpQuery(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -393,7 +393,7 @@ func TestDecodeOpQuery(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -422,7 +422,7 @@ func TestDecodeOpQuery(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -450,7 +450,7 @@ func TestDecodeOpInsert(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -477,7 +477,7 @@ func TestDecodeOpUpdate(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -496,7 +496,7 @@ func TestDecodeOpUpdate(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -522,7 +522,7 @@ func TestDecodeOpDelete(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)
@@ -549,7 +549,7 @@ func TestDecodeOpGetMore(t *testing.T) {
 			m := mock.MockIO{
 				Input:  input,
 				Output: make([]byte, 0)}
-			m.New()
+			m.Reset()
 
 			request, _, err := Decode(&m)
 			So(err, ShouldBeNil)

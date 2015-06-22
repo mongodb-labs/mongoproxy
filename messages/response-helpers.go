@@ -16,7 +16,7 @@ type ResponseWriter interface {
 	ToBytes(MsgHeader) ([]byte, error)
 
 	// ToBSON encodes a ResponseWriter into a BSON document that can be examined
-	// by other modules
+	// by other modules.
 	ToBSON() bson.M
 }
 
@@ -41,7 +41,6 @@ func (c CommandResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error writing prepared response %v\n", err)
 	}
-	resp := buf.Bytes()
 	reply := c.Reply
 	reply["ok"] = 1
 	docBytes, err := marshalReplyDocs(reply, c.Documents)
@@ -49,7 +48,7 @@ func (c CommandResponse) ToBytes(header MsgHeader) ([]byte, error) {
 		return nil, fmt.Errorf("error marshaling documents")
 	}
 
-	resp = append(resp, docBytes...)
+	resp := append(buf.Bytes(), docBytes...)
 
 	resp = setMessageSize(resp)
 
@@ -91,12 +90,11 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error writing prepared response %v\n", err)
 		}
-		resp := buf.Bytes()
 		docBytes, err := marshalReplyDocs(f.QueryFailure, nil)
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling documents")
 		}
-		resp = append(resp, docBytes...)
+		resp := append(buf.Bytes(), docBytes...)
 
 		resp = setMessageSize(resp)
 		return resp, nil
@@ -108,13 +106,12 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error writing prepared response %v\n", err)
 	}
-	resp := buf.Bytes()
 	docBytes, err := marshalReplyDocs(nil, f.Documents)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling documents")
 	}
 
-	resp = append(resp, docBytes...)
+	resp := append(buf.Bytes(), docBytes...)
 
 	resp = setMessageSize(resp)
 
@@ -125,10 +122,12 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 // the command response spec
 func (f FindResponse) ToBSON() bson.M {
 	r := bson.M{}
-	cursor := bson.M{}
-	cursor["id"] = f.CursorID
-	cursor["ns"] = f.Database + "." + f.Collection
-	cursor["firstBatch"] = f.Documents
+	cursor := bson.M{
+		"id":         f.CursorID,
+		"ns":         f.Database + "." + f.Collection,
+		"firstBatch": f.Documents,
+	}
+
 	r["cursor"] = cursor
 	return r
 }
@@ -149,10 +148,12 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 
 func (g GetMoreResponse) ToBSON() bson.M {
 	r := bson.M{}
-	cursor := bson.M{}
-	cursor["id"] = g.CursorID
-	cursor["ns"] = g.Database + "." + g.Collection
-	cursor["nextBatch"] = g.Documents
+	cursor := bson.M{
+		"id":         g.CursorID,
+		"ns":         g.Database + "." + g.Collection,
+		"firstBatch": g.Documents,
+	}
+
 	r["cursor"] = cursor
 	return r
 }
@@ -175,8 +176,9 @@ func (i InsertResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (i InsertResponse) ToBSON() bson.M {
-	r := bson.M{}
-	r["n"] = i.N
+	r := bson.M{
+		"n": i.N,
+	}
 	if i.WriteErrors != nil && len(i.WriteErrors) > 0 {
 		r["writeErrors"] = i.WriteErrors
 	}
@@ -207,9 +209,10 @@ func (u UpdateResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (u UpdateResponse) ToBSON() bson.M {
-	r := bson.M{}
-	r["n"] = u.N
-	r["nModified"] = u.NModified
+	r := bson.M{
+		"n":         u.N,
+		"nModified": u.NModified,
+	}
 	if u.Upserted != nil && len(u.Upserted) > 0 {
 		r["upserted"] = u.Upserted
 	}
@@ -236,8 +239,9 @@ func (d DeleteResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (d DeleteResponse) ToBSON() bson.M {
-	r := bson.M{}
-	r["n"] = d.N
+	r := bson.M{
+		"n": d.N,
+	}
 	if d.WriteErrors != nil && len(d.WriteErrors) > 0 {
 		r["writeErrors"] = d.WriteErrors
 	}

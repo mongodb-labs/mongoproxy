@@ -6,6 +6,15 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// constants representing the different opcodes for the wire protocol.
+const (
+	OP_UPDATE   int32 = 2001
+	OP_INSERT         = 2002
+	OP_QUERY          = 2004
+	OP_GET_MORE       = 2005
+	OP_DELETE         = 2006
+)
+
 // constants representing the types of request structs supported by proxy core.
 const (
 	CommandType string = "command"

@@ -37,25 +37,18 @@ func Log(level int, format string, args ...interface{}) {
 	switch level {
 	case CRITICAL:
 		log.Critical(format, args...)
-		break
 	case ERROR:
 		log.Error(format, args...)
-		break
 	case WARNING:
 		log.Warning(format, args...)
-		break
 	case NOTICE:
 		log.Notice(format, args...)
-		break
 	case INFO:
 		log.Info(format, args...)
-		break
 	case DEBUG:
 		log.Debug(format, args...)
-		break
 	default:
 		log.Error(format, args...)
-		break
 	}
 }
 
@@ -66,25 +59,18 @@ func SetLogLevel(level int) {
 	switch level {
 	case CRITICAL:
 		backendLeveled.SetLevel(logging.CRITICAL, "global")
-		break
 	case ERROR:
 		backendLeveled.SetLevel(logging.ERROR, "global")
-		break
 	case WARNING:
 		backendLeveled.SetLevel(logging.WARNING, "global")
-		break
 	case NOTICE:
 		backendLeveled.SetLevel(logging.NOTICE, "global")
-		break
 	case INFO:
 		backendLeveled.SetLevel(logging.INFO, "global")
-		break
 	case DEBUG:
 		backendLeveled.SetLevel(logging.DEBUG, "global")
-		break
 	default:
 		backendLeveled.SetLevel(logging.ERROR, "global")
-		break
 	}
 
 }

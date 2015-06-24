@@ -101,6 +101,10 @@ func Encode(reqHeader MsgHeader, res ModuleResponse) ([]byte, error) {
 		return EncodeBSON(reqHeader, r)
 	}
 
+	if res.Writer == nil {
+		return nil, fmt.Errorf("No response was returned.")
+	}
+
 	return res.Writer.ToBytes(reqHeader)
 
 }

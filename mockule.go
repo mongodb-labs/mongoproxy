@@ -41,7 +41,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.Database = opq.Database
 		r.Collection = opq.Collection
 		res.Write(r)
-		break
 	case messages.GetMoreType:
 		opg := req.(messages.GetMore)
 		Log(INFO, "%#v\n", opg)
@@ -54,7 +53,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.CursorID = opg.CursorID
 		r.Documents = make([]bson.D, 0)
 		res.Write(r)
-		break
 	case messages.InsertType:
 		opi := req.(messages.Insert)
 		Log(INFO, "%#v\n", opi)
@@ -72,7 +70,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.N = int32(len(opi.Documents))
 
 		res.Write(r)
-		break
 	case messages.UpdateType:
 		opu := req.(messages.Update)
 		r := messages.UpdateResponse{}
@@ -82,7 +79,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 
 		// res.Write(r)
 		res.Error(0, "not supported")
-		break
 	case messages.DeleteType:
 		opd := req.(messages.Delete)
 		Log(INFO, "%#v\n", opd)
@@ -162,7 +158,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		reply := messages.CommandResponse{}
 		reply.Reply = bson.M{"ok": 1}
 		res.Write(reply)
-		break
 	}
 	next(req, res)
 }

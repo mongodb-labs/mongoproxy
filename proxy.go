@@ -45,8 +45,11 @@ func handleConnection(conn net.Conn, pipeline modules.PipelineFunc) {
 		Log(DEBUG, "%#v\n", res)
 
 		bytes, err := messages.Encode(msgHeader, *res)
-		if msgHeader.OpCode == 2002 || msgHeader.OpCode == 2001 ||
-			msgHeader.OpCode == 2006 {
+
+		// update, delete, and insert messages do not have a response, so we continue and write the
+		// response on the getLastError that will be called immediately after. Kind of a hack.
+		if msgHeader.OpCode == messages.OP_UPDATE || msgHeader.OpCode == messages.OP_INSERT ||
+			msgHeader.OpCode == messages.OP_DELETE {
 			continue
 		}
 		if err != nil {

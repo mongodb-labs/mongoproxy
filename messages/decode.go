@@ -655,31 +655,31 @@ func Decode(reader io.Reader) (Requester, MsgHeader, error) {
 	}
 
 	switch mHeader.OpCode {
-	case 2001:
+	case OP_UPDATE:
 		opu, err := processOpUpdate(reader, mHeader)
 		if err != nil {
 			return nil, MsgHeader{}, err
 		}
 		return opu, mHeader, nil
-	case 2002:
+	case OP_INSERT:
 		opi, err := processOpInsert(reader, mHeader)
 		if err != nil {
 			return nil, MsgHeader{}, err
 		}
 		return opi, mHeader, nil
-	case 2004:
+	case OP_QUERY:
 		opq, err := processOpQuery(reader, mHeader)
 		if err != nil {
 			return nil, MsgHeader{}, err
 		}
 		return opq, mHeader, nil
-	case 2005:
+	case OP_GET_MORE:
 		opg, err := processOpGetMore(reader, mHeader)
 		if err != nil {
 			return nil, MsgHeader{}, err
 		}
 		return opg, mHeader, nil
-	case 2006:
+	case OP_DELETE:
 		opd, err := processOpDelete(reader, mHeader)
 		if err != nil {
 			return nil, MsgHeader{}, err

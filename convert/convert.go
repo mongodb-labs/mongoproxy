@@ -57,23 +57,35 @@ func WriteBit32LE(bitMask int32, n uint, value bool) int32 {
 	return newBitMask
 }
 
-func ToInt32(in interface{}) int32 {
+// ToInt32 converts an interface{} to an int32. A default value can be provided
+// if the conversion fails, otherwise 0 will be returned. Any argument after
+// the 2nd one will be ignored.
+func ToInt32(in interface{}, def ...int32) int32 {
 	n, ok := in.(int32)
 	if !ok {
-		return 0
+		if len(def) == 0 {
+			return 0
+		}
+		return def[0]
 	}
 	return n
 }
 
-func ToInt64(in interface{}) int64 {
+// ToInt64 converts an interface{} to an int64. A default value can be provided
+// if the conversion fails, otherwise 0 will be returned. Any argument after
+// the 2nd one will be ignored.
+func ToInt64(in interface{}, def ...int64) int64 {
 	n, ok := in.(int64)
 	if !ok {
-		return 0
+		if len(def) == 0 {
+			return 0
+		}
+		return def[0]
 	}
 	return n
 }
 
-// Converts an interface{} to a bool. A default value can be provided
+// ToBool converts an interface{} to a bool. A default value can be provided
 // if the conversion fails. Any argument after the 2nd one will be ignored.
 func ToBool(in interface{}, def ...bool) bool {
 	b, ok := in.(bool)
@@ -86,6 +98,8 @@ func ToBool(in interface{}, def ...bool) bool {
 	return b
 }
 
+// ToBSONDoc converts an interface{} to a bson.D. Nil is returned if the
+// conversion fails.
 func ToBSONDoc(in interface{}) bson.D {
 	d, ok := in.(bson.D)
 	if !ok {
@@ -94,6 +108,8 @@ func ToBSONDoc(in interface{}) bson.D {
 	return d
 }
 
+// ToBSONMap converts an interface{} to a bson.M. Nil is returned if the
+// conversion fails.
 func ToBSONMap(in interface{}) bson.M {
 	m, ok := in.(bson.M)
 	if !ok {

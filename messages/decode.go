@@ -164,7 +164,6 @@ func createInsert(header MsgHeader, database string, args bson.M) (Insert, error
 		return Insert{}, fmt.Errorf("Insert command has no collection.")
 	}
 	docs := args["documents"]
-	Log(ERROR, "%#v", docs)
 	documents, ok := docs.([]bson.D)
 	if !ok {
 		return Insert{}, fmt.Errorf("Insert command has no documents.")

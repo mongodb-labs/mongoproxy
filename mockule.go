@@ -3,7 +3,7 @@ package mongoproxy
 import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/modules"
+	"github.com/mongodbinc-interns/mongoproxy/server"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -20,7 +20,7 @@ type Mockule struct {
 }
 
 func (m Mockule) Process(req messages.Requester, res messages.Responder,
-	next modules.PipelineFunc) {
+	next server.PipelineFunc) {
 
 	Log(DEBUG, req.Type())
 	switch req.Type() {

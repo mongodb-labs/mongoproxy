@@ -1,6 +1,6 @@
-// Package modules contains interfaces and functions dealing with the creation
-// of modules and the module pipeline within proxy core.
-package modules
+// Package server contains interfaces and functions dealing with setting up proxy core,
+// including code construct the module pipeline.
+package server
 
 import (
 	"github.com/mongodbinc-interns/mongoproxy/messages"

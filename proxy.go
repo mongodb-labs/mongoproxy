@@ -4,11 +4,11 @@ import (
 	"fmt"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/modules"
+	"github.com/mongodbinc-interns/mongoproxy/server"
 	"net"
 )
 
-func Start(port int, pipeline modules.PipelineFunc) {
+func Start(port int, pipeline server.PipelineFunc) {
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
@@ -29,7 +29,7 @@ func Start(port int, pipeline modules.PipelineFunc) {
 
 }
 
-func handleConnection(conn net.Conn, pipeline modules.PipelineFunc) {
+func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 	for {
 
 		message, msgHeader, err := messages.Decode(conn)

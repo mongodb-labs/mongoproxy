@@ -1,4 +1,4 @@
-package modules
+package server
 
 import (
 	"github.com/mongodbinc-interns/mongoproxy/messages"
@@ -16,6 +16,12 @@ type ChainFunc func(PipelineFunc) PipelineFunc
 // into a single pipeline function.
 type ModuleChain struct {
 	chain []ChainFunc
+}
+
+// AddModule adds a module mod to the end of a given module chain.
+func (m *ModuleChain) AddModule(mod Module) *ModuleChain {
+	m.chain = append(m.chain, wrapModule(mod))
+	return m
 }
 
 // wrapModule returns a closure ChainFunc that wraps over the module m, which
@@ -42,11 +48,6 @@ func CreateChain() *ModuleChain {
 	return &ModuleChain{
 		chain: make([]ChainFunc, 0),
 	}
-}
-
-// AddModule adds a module mod to the end of a given module chain.
-func AddModule(m *ModuleChain, mod Module) {
-	m.chain = append(m.chain, wrapModule(mod))
 }
 
 // BuildPipeline takes a module chain and creates a pipeline, returning

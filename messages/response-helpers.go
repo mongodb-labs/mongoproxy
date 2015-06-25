@@ -143,6 +143,9 @@ type GetMoreResponse struct {
 func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	b := g.ToBSON()
 	b["ok"] = 1
+
+	// TODO: it's not really a good idea to use EncodeBSON with a GetMoreResponse,
+	// as some of the flags aren't set. Should revise at a later date.
 	return EncodeBSON(header, b)
 }
 

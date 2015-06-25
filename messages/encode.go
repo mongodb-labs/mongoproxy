@@ -16,7 +16,7 @@ func marshalReplyDocs(reply interface{}, docs []bson.D) ([]byte, error) {
 	if reply != nil {
 		replyBytes, err = bson.Marshal(reply)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling response document: %v\n", err)
+			return nil, fmt.Errorf("error marshaling response document: %v", err)
 		}
 	} else {
 		replyBytes = make([]byte, 0)
@@ -26,7 +26,7 @@ func marshalReplyDocs(reply interface{}, docs []bson.D) ([]byte, error) {
 		for _, doc := range docs {
 			docBytes, err := bson.Marshal(doc)
 			if err != nil {
-				return nil, fmt.Errorf("error marshaling response document: %v\n", err)
+				return nil, fmt.Errorf("error marshaling response document: %v", err)
 			}
 			replyBytes = append(replyBytes, docBytes...)
 		}
@@ -55,27 +55,37 @@ func setMessageSize(resp []byte) []byte {
 	return resp
 }
 
-// encodes a BSON object
+// EncodeBSON encodes a BSON object in an OP_REPLY wire protocol message
+// as a response to the request with header reqHeader. Not to be used with
+// find or getMore command responses, as it disregards some flags that are important
+// to those two commands.
+// http://docs.mongodb.org/meta-driver/latest/legacy/mongodb-wire-protocol/
 func EncodeBSON(reqHeader MsgHeader, b bson.M) ([]byte, error) {
 	resHeader := createResponseHeader(reqHeader)
-	// the 1 comes from res.Reply, which is sent as the first document
+
+	// we just return 1 object, which is b.
 	numberReturned := 1
 
-	flags := int32(8) // The default is for the flags to be 8.
+	// The default is for the flags to be 8, as the AwaitCapable flag
+	// is always set to true after MongoDB 1.6., while the other two flags
+	// are not used by generic commands.
+	// we should have ways to change it, though.
+	flags := int32(8)
 
 	buf := bytes.NewBuffer([]byte{})
-	err := buffer.WriteToBuf(buf, resHeader, int32(flags), int64(0), int32(0),
-		int32(numberReturned))
+	err := buffer.WriteToBuf(buf, resHeader, int32(flags),
+		int64(0),              // cursorID. Not used for generic command responses
+		int32(0),              // startingFrom. Not used for generic command responses
+		int32(numberReturned)) // the number of documents returned, 1 in this case
 	if err != nil {
-		return nil, fmt.Errorf("error writing prepared response %v\n", err)
+		return nil, fmt.Errorf("error writing prepared response %v", err)
 	}
-	resp := buf.Bytes()
 
 	docBytes, err := marshalReplyDocs(b, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling documents")
 	}
-	resp = append(resp, docBytes...)
+	resp := append(buf.Bytes(), docBytes...)
 
 	resp = setMessageSize(resp)
 

@@ -1,4 +1,6 @@
-package mongoproxy
+// Package mockule contains a module that can be used as a mock backend for
+// proxy core, which stores inserts and queries finds in memory.
+package mockule
 
 import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
+	"github.com/mongodbinc-interns/mongoproxy/modules/mockule"
 	"github.com/mongodbinc-interns/mongoproxy/server"
 )
 
@@ -25,7 +26,7 @@ func main() {
 	SetLogLevel(logLevel)
 
 	// initialize the mockule
-	mockule := mongoproxy.Mockule{}
+	mockule := mockule.Mockule{}
 
 	// initialize the pipeline
 	chain := server.CreateChain()

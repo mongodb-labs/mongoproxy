@@ -36,6 +36,7 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 
 		if err != nil {
 			Log(ERROR, "%#v", err)
+			conn.Close()
 			return
 		}
 
@@ -54,11 +55,13 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 		}
 		if err != nil {
 			Log(ERROR, "%#v", err)
+			conn.Close()
 			return
 		}
 		_, err = conn.Write(bytes)
 		if err != nil {
 			Log(ERROR, "%#v", err)
+			conn.Close()
 			return
 		}
 

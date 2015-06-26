@@ -7,9 +7,11 @@ import (
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
 	"gopkg.in/mgo.v2/bson"
+	"math/rand"
+	"strconv"
 )
 
-var maxWireVer = 2
+var maxWireVer = 3
 
 // a 'database' in memory. The string keys are the collections, which
 // have an array of bson documents.
@@ -27,7 +29,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 	Log(DEBUG, req.Type())
 	switch req.Type() {
 	case messages.FindType:
-		opq := req.(messages.Find)
+		opq, err := messages.ToFindRequest(req)
+		if err != nil {
+			break
+		}
 		Log(INFO, "%#v\n", opq)
 
 		// TODO: actually do something with the query
@@ -44,7 +49,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.Collection = opq.Collection
 		res.Write(r)
 	case messages.GetMoreType:
-		opg := req.(messages.GetMore)
+		opg, err := messages.ToGetMoreRequest(req)
+		if err != nil {
+			break
+		}
 		Log(INFO, "%#v\n", opg)
 		r := messages.GetMoreResponse{}
 		if opg.CursorID == int64(100) {
@@ -56,7 +64,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.Documents = make([]bson.D, 0)
 		res.Write(r)
 	case messages.InsertType:
-		opi := req.(messages.Insert)
+		opi, err := messages.ToInsertRequest(req)
+		if err != nil {
+			break
+		}
 		Log(INFO, "%#v\n", opi)
 
 		// insert documents into the 'database'
@@ -73,7 +84,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(r)
 	case messages.UpdateType:
-		opu := req.(messages.Update)
+		opu, err := messages.ToUpdateRequest(req)
+		if err != nil {
+			break
+		}
 		r := messages.UpdateResponse{}
 		Log(INFO, "%#v\n", opu)
 		r.N = 5
@@ -82,7 +96,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		// res.Write(r)
 		res.Error(0, "not supported")
 	case messages.DeleteType:
-		opd := req.(messages.Delete)
+		opd, err := messages.ToDeleteRequest(req)
+		if err != nil {
+			break
+		}
 		Log(INFO, "%#v\n", opd)
 		r := messages.DeleteResponse{}
 		r.N = 1
@@ -90,10 +107,15 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		res.Write(r)
 		res.Error(0, "not supported")
 	case messages.CommandType:
-		command := req.(messages.Command)
+		command, err := messages.ToCommandRequest(req)
+		if err != nil {
+			break
+		}
 		Log(INFO, "%#v\n", command)
 
 		switch command.CommandName {
+		case "ismaster":
+			fallthrough
 		case "isMaster":
 			r := bson.M{}
 			r["ismaster"] = true
@@ -101,6 +123,10 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 			r["localTime"] = bson.Now()
 			r["maxWireVersion"] = maxWireVer
 			r["minWireVersion"] = 0
+			r["maxWriteBatchSize"] = 1000
+			r["maxBsonObjectSize"] = 16777216
+			r["maxMessageSizeBytes"] = 48000000
+
 			reply := messages.CommandResponse{}
 			reply.Reply = r
 			res.Write(reply)
@@ -113,6 +139,15 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 			reply.Reply = r
 			res.Write(reply)
 			return
+		case "getnonce":
+			r := bson.M{}
+			r["ok"] = 1
+			r["nonce"] = strconv.Itoa(rand.Intn(25))
+			reply := messages.CommandResponse{}
+			reply.Reply = r
+			res.Write(reply)
+			return
+
 		case "getLog":
 			r := bson.M{}
 

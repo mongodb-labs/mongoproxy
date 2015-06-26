@@ -255,6 +255,7 @@ func createUpdate(header MsgHeader, database string, args bson.M) (Update, error
 }
 
 func createGetMore(header MsgHeader, database string, args bson.M) (GetMore, error) {
+
 	c := args["collection"]
 	collection, ok := c.(string)
 	if !ok {
@@ -307,7 +308,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading flags: %v", err)
+		return nil, fmt.Errorf("error reading flags: %v", err)
 	}
 
 	// namespace
@@ -319,31 +320,31 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		4 // bytes representing the flags
 	numNamespaceBytes, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading null terminated string: %v", err)
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 	database, collection, err := parseNamespace(namespace)
 
 	if err != nil {
-		return Command{}, fmt.Errorf("error parsing namespace: %v", err)
+		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
 	// numberToSkip
 	skip, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading NumberToSkip: %v", err)
+		return nil, fmt.Errorf("error reading NumberToSkip: %v", err)
 	}
 
 	// numberToReturn
 	limit, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading NumberToReturn: %v", err)
+		return nil, fmt.Errorf("error reading NumberToReturn: %v", err)
 	}
 
 	// query
 	var docSize int32
 	docSize, q, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Command{}, fmt.Errorf("error reading query: %v", err)
+		return nil, fmt.Errorf("error reading query: %v", err)
 	}
 	totalBytesRead := 16 + // bytes representing the header
 		4 + // bytes representing flags
@@ -358,7 +359,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		_, projection, err = buffer.ReadDocument(reader)
 		if err != nil {
 			if err != io.EOF {
-				return Find{}, fmt.Errorf("error reading projection: %v", err)
+				return nil, fmt.Errorf("error reading projection: %v", err)
 			}
 		}
 	}
@@ -463,30 +464,30 @@ func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
 		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading null terminated string: %v", err)
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Update{}, fmt.Errorf("error parsing namespace: %v", err)
+		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
 	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading flags: %v", err)
+		return nil, fmt.Errorf("error reading flags: %v", err)
 	}
 
 	// selector
 	_, selector, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading selector: %v", err)
+		return nil, fmt.Errorf("error reading selector: %v", err)
 	}
 
 	// update
 	_, updator, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Update{}, fmt.Errorf("error reading selector: %v", err)
+		return nil, fmt.Errorf("error reading selector: %v", err)
 	}
 
 	// create a proper update command
@@ -508,7 +509,7 @@ func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
 func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error reading flags: %v", err)
+		return nil, fmt.Errorf("error reading flags: %v", err)
 	}
 
 	// namespace
@@ -520,12 +521,12 @@ func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 		4 // bytes representing flags
 	numNamespaceBytes, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error reading null terminated string: %v", err)
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Insert{}, fmt.Errorf("error parsing namespace: %v", err)
+		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
 	// documents to insert
@@ -564,24 +565,24 @@ func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
 		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error reading null terminated string: %v", err)
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing namespace: %v", err)
+		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
 	// numToReturn
 	batchSize, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing batch size: %v", err)
+		return nil, fmt.Errorf("error parsing batch size: %v", err)
 	}
 
 	// cursorID
 	cursorID, err := buffer.ReadInt64LE(reader)
 	if err != nil {
-		return GetMore{}, fmt.Errorf("error parsing cursor ID: %v", err)
+		return nil, fmt.Errorf("error parsing cursor ID: %v", err)
 	}
 
 	args := bson.M{}
@@ -605,24 +606,24 @@ func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 		4 // the zero
 	_, namespace, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading null terminated string: %v", err)
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
 	database, collection, err := parseNamespace(namespace)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error parsing namespace: %v", err)
+		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
 
 	// flags
 	flags, err := buffer.ReadInt32LE(reader)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading flags: %v", err)
+		return nil, fmt.Errorf("error reading flags: %v", err)
 	}
 
 	// selector
 	_, selector, err := buffer.ReadDocument(reader)
 	if err != nil {
-		return Delete{}, fmt.Errorf("error reading selector: %v", err)
+		return nil, fmt.Errorf("error reading selector: %v", err)
 	}
 
 	args := bson.M{}
@@ -649,6 +650,7 @@ func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 // fails in any way
 func Decode(reader io.Reader) (Requester, MsgHeader, error) {
 	mHeader, err := processHeader(reader)
+
 	if err != nil {
 		return nil, MsgHeader{}, err
 	}

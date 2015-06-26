@@ -212,10 +212,9 @@ func TestProcessHeader(t *testing.T) {
 				Output: make([]byte, 0)}
 			m.Reset()
 
-			header, err := processHeader(&m)
+			_, err := processHeader(&m)
 
 			So(err, ShouldNotBeNil)
-			So(header, ShouldNotBeNil)
 		})
 
 		Convey("handle a read error from the reader", func() {
@@ -224,12 +223,11 @@ func TestProcessHeader(t *testing.T) {
 				Output: make([]byte, 0)}
 			m.Reset()
 
-			header, err := processHeader(&m)
+			_, err := processHeader(&m)
 
 			So(err, ShouldNotBeNil)
-			So(header, ShouldNotBeNil)
 
-			header, err = processHeader(&m)
+			_, err = processHeader(&m)
 
 			So(err, ShouldNotBeNil)
 		})
@@ -262,7 +260,8 @@ func TestDecodeOpQuery(t *testing.T) {
 				t := request.Type()
 				So(t, ShouldEqual, "find")
 
-				opq := request.(Find)
+				opq, err := ToFindRequest(request)
+				So(err, ShouldBeNil)
 				So(opq, ShouldNotBeNil)
 
 			})
@@ -280,7 +279,8 @@ func TestDecodeOpQuery(t *testing.T) {
 				t := request.Type()
 				So(t, ShouldEqual, "find")
 
-				opq := request.(Find)
+				opq, err := ToFindRequest(request)
+				So(err, ShouldBeNil)
 				So(opq, ShouldNotBeNil)
 
 				So(opq.Tailable, ShouldEqual, true)
@@ -306,9 +306,11 @@ func TestDecodeOpQuery(t *testing.T) {
 					Output: make([]byte, 0)}
 				m.Reset()
 
+				Log(ERROR, "%#v", m)
+
 				request, _, err := Decode(&m)
-				fmt.Printf("%v\n", request)
 				So(err, ShouldNotBeNil)
+				So(request, ShouldBeNil)
 			})
 			Convey("because the namespace has no collection", func() {
 				input := createMockQuery(int32(0), int32(0), "db.", int32(0), int32(0), mockQuery)
@@ -372,8 +374,8 @@ func TestDecodeOpQuery(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "command")
 
-			command, ok := request.(Command)
-			So(ok, ShouldEqual, true)
+			command, err := ToCommandRequest(request)
+			So(err, ShouldBeNil)
 
 			name := command.GetArg("isMaster")
 			So(name, ShouldEqual, 1)
@@ -401,7 +403,8 @@ func TestDecodeOpQuery(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "insert")
 
-			opq := request.(Insert)
+			opq, err := ToInsertRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
 
 			So(opq.Collection, ShouldEqual, "foo")
@@ -430,7 +433,8 @@ func TestDecodeOpQuery(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "update")
 
-			opq := request.(Update)
+			opq, err := ToUpdateRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
 
 			So(opq.Collection, ShouldEqual, "foo")
@@ -458,7 +462,8 @@ func TestDecodeOpInsert(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "insert")
 
-			opq := request.(Insert)
+			opq, err := ToInsertRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
 
 			So(opq.Collection, ShouldEqual, "foo")
@@ -485,8 +490,10 @@ func TestDecodeOpUpdate(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "update")
 
-			opq := request.(Update)
+			opq, err := ToUpdateRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
+
 			So(opq.Updates[0], ShouldNotBeNil)
 			So(len(opq.Updates), ShouldEqual, 1)
 			So(opq.Updates[0].Upsert, ShouldEqual, false)
@@ -504,7 +511,8 @@ func TestDecodeOpUpdate(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "update")
 
-			opq := request.(Update)
+			opq, err := ToUpdateRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
 
 			So(opq.Updates[0], ShouldNotBeNil)
@@ -530,8 +538,10 @@ func TestDecodeOpDelete(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "delete")
 
-			opq := request.(Delete)
+			opq, err := ToDeleteRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
+
 			So(opq.Database, ShouldEqual, "db")
 			So(opq.Collection, ShouldEqual, "foo")
 			So(len(opq.Deletes), ShouldEqual, 1)
@@ -557,8 +567,10 @@ func TestDecodeOpGetMore(t *testing.T) {
 			t := request.Type()
 			So(t, ShouldEqual, "getMore")
 
-			opq := request.(GetMore)
+			opq, err := ToGetMoreRequest(request)
+			So(err, ShouldBeNil)
 			So(opq, ShouldNotBeNil)
+
 			So(opq.Database, ShouldEqual, "db")
 			So(opq.Collection, ShouldEqual, "foo")
 			So(opq.CursorID, ShouldEqual, int64(125))

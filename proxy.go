@@ -35,7 +35,7 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 		message, msgHeader, err := messages.Decode(conn)
 
 		if err != nil {
-			Log(ERROR, "%#v", err)
+			Log(ERROR, "Decoding error: %#v", err)
 			conn.Close()
 			return
 		}
@@ -51,16 +51,17 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 		// response on the getLastError that will be called immediately after. Kind of a hack.
 		if msgHeader.OpCode == messages.OP_UPDATE || msgHeader.OpCode == messages.OP_INSERT ||
 			msgHeader.OpCode == messages.OP_DELETE {
+			Log(INFO, "Continuing on OpCode: %v", msgHeader.OpCode)
 			continue
 		}
 		if err != nil {
-			Log(ERROR, "%#v", err)
+			Log(ERROR, "Encoding error: %#v", err)
 			conn.Close()
 			return
 		}
 		_, err = conn.Write(bytes)
 		if err != nil {
-			Log(ERROR, "%#v", err)
+			Log(ERROR, "Error writing to connection: %#v", err)
 			conn.Close()
 			return
 		}

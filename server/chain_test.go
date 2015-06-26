@@ -77,7 +77,7 @@ func TestModuleChaining(t *testing.T) {
 
 			m1 := ModuleOne{}
 			chain := CreateChain()
-			AddModule(chain, m1)
+			chain.AddModule(m1)
 			r := MockReq{}
 			w := &MockRes{
 				Data: make([]bson.M, 0),
@@ -93,8 +93,8 @@ func TestModuleChaining(t *testing.T) {
 				m1 := ModuleOne{}
 				m2 := ModuleTwo{}
 				chain := CreateChain()
-				AddModule(chain, m2)
-				AddModule(chain, m1)
+				chain.AddModule(m2)
+				chain.AddModule(m1)
 				r := MockReq{}
 				w := &MockRes{
 					Data: make([]bson.M, 0),

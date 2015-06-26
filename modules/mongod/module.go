@@ -1,0 +1,79 @@
+package mongod
+
+import (
+	. "github.com/mongodbinc-interns/mongoproxy/log"
+	"github.com/mongodbinc-interns/mongoproxy/messages"
+	"github.com/mongodbinc-interns/mongoproxy/server"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+	"time"
+)
+
+var port = 8000
+
+type RawBytesWriter struct {
+	Data []byte
+}
+
+func (r RawBytesWriter) ToBSON() bson.M {
+	return bson.M{
+		"data": r.Data,
+	}
+}
+
+func (r RawBytesWriter) ToBytes(header messages.MsgHeader) ([]byte, error) {
+	return r.Data, nil
+}
+
+type MongodModule struct{}
+
+var mongoSession *mgo.Session
+var mongoDBDialInfo = &mgo.DialInfo{
+	Addrs:    []string{"localhost:8000"},
+	Timeout:  60 * time.Second,
+	Database: "test",
+}
+
+func init() {
+	var err error
+	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
+	if err != nil {
+		Log(ERROR, "%#v\n", err)
+		return
+	}
+}
+
+func (m MongodModule) Process(req messages.Requester, res messages.Responder,
+	next server.PipelineFunc) {
+
+	// takes the request, throws it back into a wire protocol message, and
+	// sends it to the responder
+	switch req.Type() {
+	case messages.CommandType:
+		command, err := messages.ToCommandRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		b := commandToBSONDoc(command)
+
+		Log(NOTICE, "%#v\n", b)
+
+		reply := bson.M{}
+		mongoSession.DB(command.Database).Run(b, reply)
+
+		response := messages.CommandResponse{
+			Reply: reply,
+		}
+
+		res.Write(response)
+
+	default:
+		Log(ERROR, "Unsupported operation")
+	}
+	// mongoSession.Close()
+	next(req, res)
+
+}

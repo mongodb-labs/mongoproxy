@@ -4,8 +4,8 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/modules"
-	"github.com/mongodbinc-interns/mongoproxy/mongod"
+	"github.com/mongodbinc-interns/mongoproxy/modules/mongod"
+	"github.com/mongodbinc-interns/mongoproxy/server"
 )
 
 var (
@@ -28,9 +28,9 @@ func main() {
 	// initialize the mockule
 	module := mongod.MongodModule{}
 	// initialize the pipeline
-	chain := modules.CreateChain()
-	modules.AddModule(chain, module)
-	pipeline := modules.BuildPipeline(chain)
+	chain := server.CreateChain()
+	chain.AddModule(module)
+	pipeline := server.BuildPipeline(chain)
 
 	mongoproxy.Start(port, pipeline)
 }

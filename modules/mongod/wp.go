@@ -9,6 +9,24 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func commandToBSONDoc(c messages.Command) bson.D {
+	nameArg, ok := c.Args[c.CommandName]
+	if !ok {
+		nameArg = 1
+	}
+	args := bson.D{
+		{c.CommandName, nameArg},
+	}
+
+	for arg, value := range c.Args {
+		if arg != c.CommandName {
+			args = append(args, bson.DocElem{arg, value})
+		}
+	}
+
+	return args
+}
+
 func marshalReplyDocs(reply interface{}, docs []bson.D) ([]byte, error) {
 
 	var replyBytes []byte
@@ -68,19 +86,7 @@ func CommandToBytes(c messages.Command) ([]byte, error) {
 	}
 
 	// encode the args with the OP_QUERY for now.
-	nameArg, ok := c.Args[c.CommandName]
-	if !ok {
-		nameArg = 1
-	}
-	args := bson.D{
-		{c.CommandName, nameArg},
-	}
-
-	for arg, value := range c.Args {
-		if arg != c.CommandName {
-			args = append(args, bson.DocElem{arg, value})
-		}
-	}
+	args := commandToBSONDoc(c)
 	docBytes, err := marshalReplyDocs(args, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling documents")

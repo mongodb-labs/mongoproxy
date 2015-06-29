@@ -2,6 +2,7 @@
 package convert
 
 import (
+	"fmt"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -57,16 +58,33 @@ func WriteBit32LE(bitMask int32, n uint, value bool) int32 {
 	return newBitMask
 }
 
+// ToInt converts an interface{} to an int. A default value can be provided
+// if the conversion fails, otherwise 0 will be returned. Any argument after
+// the 2nd one will be ignored.
+func ToInt(in interface{}, def ...int) int {
+	n, ok := in.(int)
+	if !ok {
+		if len(def) == 0 {
+			return 0
+		}
+		return def[0]
+	}
+	return n
+}
+
 // ToInt32 converts an interface{} to an int32. A default value can be provided
 // if the conversion fails, otherwise 0 will be returned. Any argument after
 // the 2nd one will be ignored.
 func ToInt32(in interface{}, def ...int32) int32 {
 	n, ok := in.(int32)
 	if !ok {
-		if len(def) == 0 {
-			return 0
+
+		// check to see if it is an int, and cast to int32 as needed
+		if len(def) > 0 {
+			return int32(ToInt(in, int(def[0])))
 		}
-		return def[0]
+		return int32(ToInt(in))
+
 	}
 	return n
 }
@@ -77,10 +95,11 @@ func ToInt32(in interface{}, def ...int32) int32 {
 func ToInt64(in interface{}, def ...int64) int64 {
 	n, ok := in.(int64)
 	if !ok {
-		if len(def) == 0 {
-			return 0
+		// check to see if it is an int, and cast to int64 as needed
+		if len(def) > 0 {
+			return int64(ToInt(in, int(def[0])))
 		}
-		return def[0]
+		return int64(ToInt(in))
 	}
 	return n
 }
@@ -116,4 +135,74 @@ func ToBSONMap(in interface{}) bson.M {
 		return nil
 	}
 	return m
+}
+
+// ConvertToBSONMapSlice converts an []interface{}, []bson.D, or []bson.M slice to a []bson.M
+// slice (assuming that all contents are either bson.M or bson.D objects)
+func ConvertToBSONMapSlice(input interface{}) ([]bson.M, error) {
+
+	inputBSONM, ok := input.([]bson.M)
+	if ok {
+		return inputBSONM, nil
+	}
+
+	inputBSOND, ok := input.([]bson.D)
+	if ok {
+		// just convert all of the bson.D documents to bson.M
+		d := make([]bson.M, len(inputBSOND))
+		for i := 0; i < len(inputBSOND); i++ {
+			doc := inputBSOND[i]
+			d[i] = doc.Map()
+		}
+		return d, nil
+	}
+
+	inputInterface, ok := input.([]interface{})
+	if ok {
+		d := make([]bson.M, len(inputInterface))
+		for i := 0; i < len(inputInterface); i++ {
+			doc := inputInterface[i]
+			docM, ok2 := doc.(bson.M)
+			if !ok2 {
+				// check if it's a bson.D
+				docD, ok3 := doc.(bson.D)
+				if ok3 {
+					docM = docD.Map()
+				} else {
+					// error
+					return nil, fmt.Errorf("Slice contents aren't BSON objects")
+				}
+			}
+
+			d[i] = docM
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported input")
+}
+
+// ConvertToBSONDocSlice converts an []interface{} to a []bson.D slice
+// assuming contents are bson.D objects
+func ConvertToBSONDocSlice(input interface{}) ([]bson.D, error) {
+	inputBSOND, ok := input.([]bson.D)
+	if ok {
+		return inputBSOND, nil
+	}
+
+	inputInterface, ok := input.([]interface{})
+	if ok {
+		d := make([]bson.D, len(inputInterface))
+		for i := 0; i < len(inputInterface); i++ {
+			doc := inputInterface[i]
+			docD, ok2 := doc.(bson.D)
+			if !ok2 {
+				return nil, fmt.Errorf("Slice contents aren't BSON objects")
+			}
+			d[i] = docD
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported input")
 }

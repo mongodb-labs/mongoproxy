@@ -1,6 +1,8 @@
 package mongod
 
 import (
+	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
+	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
@@ -59,8 +61,6 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		b := commandToBSONDoc(command)
 
-		Log(NOTICE, "%#v\n", b)
-
 		reply := bson.M{}
 		mongoSession.DB(command.Database).Run(b, reply)
 
@@ -99,6 +99,64 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			Collection: f.Collection,
 			Documents:  results,
 		}
+
+		res.Write(response)
+
+	case messages.InsertType:
+		insert, err := messages.ToInsertRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		b := insertToBSONDoc(insert)
+
+		reply := bson.M{}
+		mongoSession.DB(insert.Database).Run(b, reply)
+
+		response := messages.InsertResponse{
+			N: convert.ToInt32(reply["n"]),
+			// TODO: write errors
+		}
+
+		if convert.ToInt(reply["ok"]) == 0 {
+			// we have a command error.
+		}
+
+		Log(NOTICE, "Reply: %#v\n", reply)
+
+		res.Write(response)
+
+	case messages.UpdateType:
+		// TODO: Fix the response variables. Currently kind of hacky.
+
+		u, err := messages.ToUpdateRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		b := updateToBSONDoc(u)
+
+		reply := bson.D{}
+		mongoSession.DB(u.Database).Run(b, &reply)
+
+		response := messages.UpdateResponse{
+			N:         convert.ToInt32(bsonutil.FindValueByKey("n", reply)),
+			NModified: convert.ToInt32(bsonutil.FindValueByKey("nModified", reply)),
+			// TODO: write errors
+		}
+
+		rawUpserted := bsonutil.FindValueByKey("upserted", reply)
+		upserted, err := convert.ConvertToBSONDocSlice(rawUpserted)
+		if err == nil {
+			// we have upserts
+			response.Upserted = upserted
+		}
+
+		Log(NOTICE, "Reply: %#v\n", response)
 
 		res.Write(response)
 	default:

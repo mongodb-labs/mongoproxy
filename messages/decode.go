@@ -12,76 +12,6 @@ import (
 	"strings"
 )
 
-// convertToBSONMapSlice converts an []interface{}, []bson.D, or []bson.M slice to a []bson.M
-// slice (assuming that all contents are either bson.M or bson.D objects)
-func convertToBSONMapSlice(input interface{}) ([]bson.M, error) {
-
-	inputBSONM, ok := input.([]bson.M)
-	if ok {
-		return inputBSONM, nil
-	}
-
-	inputBSOND, ok := input.([]bson.D)
-	if ok {
-		// just convert all of the bson.D documents to bson.M
-		d := make([]bson.M, len(inputBSOND))
-		for i := 0; i < len(inputBSOND); i++ {
-			doc := inputBSOND[i]
-			d[i] = doc.Map()
-		}
-		return d, nil
-	}
-
-	inputInterface, ok := input.([]interface{})
-	if ok {
-		d := make([]bson.M, len(inputInterface))
-		for i := 0; i < len(inputInterface); i++ {
-			doc := inputInterface[i]
-			docM, ok2 := doc.(bson.M)
-			if !ok2 {
-				// check if it's a bson.D
-				docD, ok3 := doc.(bson.D)
-				if ok3 {
-					docM = docD.Map()
-				} else {
-					// error
-					return nil, fmt.Errorf("Slice contents aren't BSON objects")
-				}
-			}
-
-			d[i] = docM
-		}
-		return d, nil
-	}
-
-	return nil, fmt.Errorf("Unsupported input")
-}
-
-// convertToBSONDocSlice converts an []interface{} to a []bson.D slice
-// assuming contents are bson.D objects
-func convertToBSONDocSlice(input interface{}) ([]bson.D, error) {
-	inputBSOND, ok := input.([]bson.D)
-	if ok {
-		return inputBSOND, nil
-	}
-
-	inputInterface, ok := input.([]interface{})
-	if ok {
-		d := make([]bson.D, len(inputInterface))
-		for i := 0; i < len(inputInterface); i++ {
-			doc := inputInterface[i]
-			docD, ok2 := doc.(bson.D)
-			if !ok2 {
-				return nil, fmt.Errorf("Slice contents aren't BSON objects")
-			}
-			d[i] = docD
-		}
-		return d, nil
-	}
-
-	return nil, fmt.Errorf("Unsupported input")
-}
-
 func splitCommandOpQuery(q bson.D) (string, bson.M) {
 	commandName := q[0].Name
 
@@ -373,7 +303,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		case "insert":
 			// convert documents to an array of bson.D so that the struct
 			// knows what to do with them.
-			i, err := convertToBSONDocSlice(args["documents"])
+			i, err := convert.ConvertToBSONDocSlice(args["documents"])
 
 			if err != nil {
 				return nil, err
@@ -389,7 +319,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 		case "update":
 			// convert updates to an array of bson.M so that the struct
 			// knows what to do with them.
-			u, err := convertToBSONMapSlice(args["updates"])
+			u, err := convert.ConvertToBSONMapSlice(args["updates"])
 
 			if err != nil {
 				return nil, err
@@ -404,7 +334,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			break
 		case "delete":
 
-			d, err := convertToBSONMapSlice(args["deletes"])
+			d, err := convert.ConvertToBSONMapSlice(args["deletes"])
 			if err != nil {
 				return nil, err
 			}

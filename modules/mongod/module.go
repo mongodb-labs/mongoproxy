@@ -29,7 +29,7 @@ type MongodModule struct{}
 
 var mongoSession *mgo.Session
 var mongoDBDialInfo = &mgo.DialInfo{
-	Addrs:    []string{"localhost:8000"},
+	Addrs:    []string{"localhost:27017"},
 	Timeout:  60 * time.Second,
 	Database: "test",
 }
@@ -70,6 +70,37 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(response)
 
+	case messages.FindType:
+		f, err := messages.ToFindRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		c := mongoSession.DB(f.Database).C(f.Collection)
+		query := c.Find(f.Filter).Limit(int(f.Limit)).Skip(int(f.Skip))
+
+		if f.Projection != nil {
+			query = query.Select(f.Projection)
+		}
+
+		var results []bson.D
+		err = query.All(&results)
+
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		response := messages.FindResponse{
+			Database:   f.Database,
+			Collection: f.Collection,
+			Documents:  results,
+		}
+
+		res.Write(response)
 	default:
 		Log(ERROR, "Unsupported operation")
 	}

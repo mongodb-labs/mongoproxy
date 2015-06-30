@@ -5,6 +5,7 @@ import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
+	"io"
 	"net"
 )
 
@@ -35,7 +36,9 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 		message, msgHeader, err := messages.Decode(conn)
 
 		if err != nil {
-			Log(ERROR, "Decoding error: %#v", err)
+			if err != io.EOF {
+				Log(ERROR, "Decoding error: %#v", err)
+			}
 			conn.Close()
 			return
 		}

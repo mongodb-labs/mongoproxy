@@ -95,7 +95,13 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		err = query.All(&results)
 
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(ERROR, "Error on Find Command: %#v\n", err)
+
+			qErr, ok := err.(*mgo.QueryError)
+
+			if ok {
+				res.Error(int32(qErr.Code), qErr.Message)
+			}
 			next(req, res)
 			return
 		}
@@ -153,7 +159,13 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		response := messages.UpdateResponse{
 			N:         convert.ToInt32(bsonutil.FindValueByKey("n", reply)),
 			NModified: convert.ToInt32(bsonutil.FindValueByKey("nModified", reply)),
-			// TODO: write errors
+		}
+
+		writeErrors, err := convert.ConvertToBSONMapSlice(
+			bsonutil.FindValueByKey("writeErrors", reply))
+		if err == nil {
+			// we have write errors
+			response.WriteErrors = writeErrors
 		}
 
 		rawUpserted := bsonutil.FindValueByKey("upserted", reply)

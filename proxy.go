@@ -40,10 +40,10 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 			return
 		}
 
+		Log(DEBUG, "Request: %#v\n", message)
+
 		res := &messages.ModuleResponse{}
 		pipeline(message, res)
-
-		Log(DEBUG, "%#v\n", res)
 
 		bytes, err := messages.Encode(msgHeader, *res)
 

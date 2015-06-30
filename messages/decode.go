@@ -223,7 +223,6 @@ func processHeader(reader io.Reader) (MsgHeader, error) {
 		Log(ERROR, "error decoding from reader: %v\n", err)
 		return MsgHeader{}, err
 	}
-	Log(DEBUG, "request: %#v\n", mHeader)
 
 	// sanity check
 	if mHeader.MessageLength <= 15 {
@@ -315,7 +314,6 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			if err != nil {
 				return nil, err
 			}
-			break
 		case "update":
 			// convert updates to an array of bson.M so that the struct
 			// knows what to do with them.
@@ -331,7 +329,6 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			if err != nil {
 				return nil, err
 			}
-			break
 		case "delete":
 
 			d, err := convert.ConvertToBSONMapSlice(args["deletes"])
@@ -345,7 +342,6 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			if err != nil {
 				return nil, err
 			}
-			break
 		default:
 			c = createCommand(header, cName, database, args)
 		}

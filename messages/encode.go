@@ -95,7 +95,7 @@ func EncodeBSON(reqHeader MsgHeader, b bson.M) ([]byte, error) {
 // Encodes a response into a byte slice that represents an OP_REPLY wire protocol message.
 func Encode(reqHeader MsgHeader, res ModuleResponse) ([]byte, error) {
 
-	Log(DEBUG, "%#v\n", res)
+	Log(DEBUG, "Response: %#v\n", res)
 
 	// handle error
 	hasError := res.CommandError != nil

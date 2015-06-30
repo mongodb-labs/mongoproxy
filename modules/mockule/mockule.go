@@ -26,7 +26,6 @@ type Mockule struct {
 func (m Mockule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 
-	Log(DEBUG, req.Type())
 	switch req.Type() {
 	case messages.FindType:
 		opq, err := messages.ToFindRequest(req)

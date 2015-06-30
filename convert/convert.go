@@ -58,18 +58,29 @@ func WriteBit32LE(bitMask int32, n uint, value bool) int32 {
 	return newBitMask
 }
 
-// ToInt converts an interface{} to an int. A default value can be provided
+// ToInt converts an interface{} to an int. Will also convert float32 and float64
+// to integers. A default value can be provided
 // if the conversion fails, otherwise 0 will be returned. Any argument after
 // the 2nd one will be ignored.
 func ToInt(in interface{}, def ...int) int {
 	n, ok := in.(int)
-	if !ok {
-		if len(def) == 0 {
-			return 0
-		}
-		return def[0]
+	if ok {
+		return n
 	}
-	return n
+	n2, ok := in.(float32)
+	if ok {
+		return int(n2)
+	}
+	n3, ok := in.(float64)
+	if ok {
+		return int(n3)
+	}
+
+	if len(def) == 0 {
+		return 0
+	}
+	return def[0]
+
 }
 
 // ToInt32 converts an interface{} to an int32. A default value can be provided
@@ -111,6 +122,19 @@ func ToBool(in interface{}, def ...bool) bool {
 	if !ok {
 		if len(def) == 0 {
 			return false
+		}
+		return def[0]
+	}
+	return b
+}
+
+// ToString converts an interface{} to a string. A default value can be provided
+// if the conversion fails. Any argument after the 2nd one will be ignored.
+func ToString(in interface{}, def ...string) string {
+	b, ok := in.(string)
+	if !ok {
+		if len(def) == 0 {
+			return ""
 		}
 		return def[0]
 	}

@@ -68,6 +68,12 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			Reply: reply,
 		}
 
+		Log(NOTICE, "Reply: %#v\n", reply)
+		if convert.ToInt(reply["ok"]) == 0 {
+			// we have a command error.
+			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
+		}
+
 		res.Write(response)
 
 	case messages.FindType:
@@ -117,20 +123,21 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		response := messages.InsertResponse{
 			N: convert.ToInt32(reply["n"]),
-			// TODO: write errors
+		}
+		writeErrors, err := convert.ConvertToBSONMapSlice(reply["writeErrors"])
+		if err == nil {
+			// we have write errors
+			response.WriteErrors = writeErrors
 		}
 
 		if convert.ToInt(reply["ok"]) == 0 {
 			// we have a command error.
+			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
 		}
-
-		Log(NOTICE, "Reply: %#v\n", reply)
 
 		res.Write(response)
 
 	case messages.UpdateType:
-		// TODO: Fix the response variables. Currently kind of hacky.
-
 		u, err := messages.ToUpdateRequest(req)
 		if err != nil {
 			Log(ERROR, "%#v\n", err)
@@ -156,7 +163,42 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			response.Upserted = upserted
 		}
 
-		Log(NOTICE, "Reply: %#v\n", response)
+		if convert.ToInt(bsonutil.FindValueByKey("ok", reply)) == 0 {
+			// we have a command error.
+			res.Error(convert.ToInt32(bsonutil.FindValueByKey("code", reply)),
+				convert.ToString(bsonutil.FindValueByKey("errmsg", reply)))
+		}
+
+		res.Write(response)
+
+	case messages.DeleteType:
+		d, err := messages.ToDeleteRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		b := deleteToBSONDoc(d)
+
+		reply := bson.M{}
+		mongoSession.DB(d.Database).Run(b, reply)
+
+		response := messages.DeleteResponse{
+			N: convert.ToInt32(reply["n"]),
+		}
+		writeErrors, err := convert.ConvertToBSONMapSlice(reply["writeErrors"])
+		if err == nil {
+			// we have write errors
+			response.WriteErrors = writeErrors
+		}
+
+		if convert.ToInt(reply["ok"]) == 0 {
+			// we have a command error.
+			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
+		}
+
+		Log(NOTICE, "Reply: %#v\n", reply)
 
 		res.Write(response)
 	default:

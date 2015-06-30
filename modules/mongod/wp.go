@@ -55,3 +55,24 @@ func updateToBSONDoc(u messages.Update) bson.D {
 
 	return args
 }
+
+func deleteToBSONDoc(d messages.Delete) bson.D {
+
+	deletes := make([]bson.M, len(d.Deletes))
+
+	for i := 0; i < len(d.Deletes); i++ {
+		singleDelete := d.Deletes[i]
+		deletes[i] = bson.M{
+			"q":     singleDelete.Selector,
+			"limit": singleDelete.Limit,
+		}
+	}
+
+	args := bson.D{
+		{"delete", d.Collection},
+		{"deletes", deletes},
+		{"ordered", d.Ordered},
+	}
+
+	return args
+}

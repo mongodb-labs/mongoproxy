@@ -13,24 +13,14 @@ import (
 
 var port = 8000
 
-type RawBytesWriter struct {
-	Data []byte
-}
-
-func (r RawBytesWriter) ToBSON() bson.M {
-	return bson.M{
-		"data": r.Data,
-	}
-}
-
-func (r RawBytesWriter) ToBytes(header messages.MsgHeader) ([]byte, error) {
-	return r.Data, nil
-}
-
+// A MongodModule takes the request, sends it to a mongod instance, and then
+// writes the response from mongod into the ResponseWriter before calling
+// the next module. It passes on requests unchanged.
 type MongodModule struct{}
 
 var mongoSession *mgo.Session
 var mongoDBDialInfo = &mgo.DialInfo{
+	// TODO: Allow configurable connection info
 	Addrs:    []string{"localhost:27017"},
 	Timeout:  60 * time.Second,
 	Database: "test",
@@ -48,8 +38,6 @@ func init() {
 func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 
-	// takes the request, throws it back into a wire protocol message, and
-	// sends it to the responder
 	switch req.Type() {
 	case messages.CommandType:
 		command, err := messages.ToCommandRequest(req)
@@ -92,13 +80,17 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		}
 
 		var results []bson.D
+
+		// TODO: implement getMore properly, since this behavior is
+		// different than the default shell's. Will just dump all of the
+		// documents instead of using the cursor and batches.
 		err = query.All(&results)
 
 		if err != nil {
 			Log(ERROR, "Error on Find Command: %#v\n", err)
 
+			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
-
 			if ok {
 				res.Error(int32(qErr.Code), qErr.Message)
 			}
@@ -213,6 +205,17 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		Log(NOTICE, "Reply: %#v\n", reply)
 
 		res.Write(response)
+
+	case messages.GetMoreType:
+		g, err := messages.ToGetMoreRequest(req)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+
+		// TODO: actually do something. Convert into an OP_GET_MORE, as mgo
+		// abstracts it away in the Iter object
 	default:
 		Log(ERROR, "Unsupported operation")
 	}

@@ -59,9 +59,8 @@ func WriteBit32LE(bitMask int32, n uint, value bool) int32 {
 }
 
 // ToInt converts an interface{} to an int. Will also convert float32 and float64
-// to integers. A default value can be provided
-// if the conversion fails, otherwise 0 will be returned. Any argument after
-// the 2nd one will be ignored.
+// to integers via rounding. A default value can be provided if the conversion fails,
+// otherwise 0 will be returned. Any argument after the 2nd one will be ignored.
 func ToInt(in interface{}, def ...int) int {
 	n, ok := in.(int)
 	if ok {

@@ -305,7 +305,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			i, err := convert.ConvertToBSONDocSlice(args["documents"])
 
 			if err != nil {
-				return nil, err
+				i = make([]bson.D, 0)
 			}
 
 			args["documents"] = i
@@ -320,7 +320,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 			u, err := convert.ConvertToBSONMapSlice(args["updates"])
 
 			if err != nil {
-				return nil, err
+				u = make([]bson.M, 0)
 			}
 
 			args["updates"] = u
@@ -333,7 +333,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 
 			d, err := convert.ConvertToBSONMapSlice(args["deletes"])
 			if err != nil {
-				return nil, err
+				d = make([]bson.M, 0)
 			}
 
 			args["deletes"] = d

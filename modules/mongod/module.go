@@ -101,6 +101,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			Database:   f.Database,
 			Collection: f.Collection,
 			Documents:  results,
+			// TODO: retrieve CursorID
 		}
 
 		res.Write(response)

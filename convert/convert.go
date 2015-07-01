@@ -155,6 +155,10 @@ func ToBSONDoc(in interface{}) bson.D {
 func ToBSONMap(in interface{}) bson.M {
 	m, ok := in.(bson.M)
 	if !ok {
+		d, ok2 := in.(bson.D)
+		if ok2 {
+			return d.Map()
+		}
 		return nil
 	}
 	return m

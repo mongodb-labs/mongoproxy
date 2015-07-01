@@ -2,4 +2,4 @@
 
 chmod 755 ./set_gopath.sh
 . ./set_gopath.sh
-go run main/server.go -logLevel 5
+go run main/mongod-server.go -logLevel 5

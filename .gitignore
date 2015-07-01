@@ -10,3 +10,4 @@ vendor/
 .godeps
 
 coverage.out
+out

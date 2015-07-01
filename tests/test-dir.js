@@ -5,9 +5,17 @@ var childProcess = require('child_process');
 var fs = require('fs');
 var path = process.cwd();
 
-var server = childProcess.spawn('go', [
-	'run',
-	__dirname + '/main/test-server.go',
+
+var build = childProcess.spawnSync('go', [
+	'build',
+	'-o',
+	__dirname + '/out',
+	__dirname + '/main/test-server.go'
+], {
+	stdio: 'inherit'
+});
+
+var server = childProcess.spawn(__dirname + '/out', [
 	'-port=' + 8000,
 	'-logLevel=' + 1
 ], {
@@ -42,6 +50,7 @@ setTimeout(function() {
 
 		if (i >= testFiles.length) {
 			clearInterval(id);
+			server.kill();
 		}
 	}, 100)
 

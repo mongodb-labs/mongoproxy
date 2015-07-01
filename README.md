@@ -14,3 +14,9 @@ To run tests:
 	
 	chmod 755 ./test.sh
 	./test.sh <name of package to test>
+
+To run integration tests:
+
+	node tests/test <js file to test>
+
+	node tests/test-dir <directory of files to test>

@@ -89,11 +89,12 @@ func (f Find) ID() int32 {
 
 // the struct for the 'insert' command
 type Insert struct {
-	RequestID  int32
-	Database   string
-	Collection string
-	Documents  []bson.D
-	Ordered    bool
+	RequestID    int32
+	Database     string
+	Collection   string
+	Documents    []bson.D
+	Ordered      bool
+	WriteConcern *bson.M
 }
 
 func (i Insert) Type() string {
@@ -113,11 +114,12 @@ type SingleUpdate struct {
 
 // the struct for the 'update' command
 type Update struct {
-	RequestID  int32
-	Database   string
-	Collection string
-	Updates    []SingleUpdate
-	Ordered    bool
+	RequestID    int32
+	Database     string
+	Collection   string
+	Updates      []SingleUpdate
+	Ordered      bool
+	WriteConcern *bson.M
 }
 
 func (u Update) Type() string {
@@ -135,11 +137,12 @@ type SingleDelete struct {
 
 // struct for 'delete' command
 type Delete struct {
-	RequestID  int32
-	Database   string
-	Collection string
-	Deletes    []SingleDelete
-	Ordered    bool
+	RequestID    int32
+	Database     string
+	Collection   string
+	Deletes      []SingleDelete
+	Ordered      bool
+	WriteConcern *bson.M
 }
 
 func (d Delete) Type() string {

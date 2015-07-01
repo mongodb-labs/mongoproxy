@@ -30,6 +30,10 @@ func insertToBSONDoc(i messages.Insert) bson.D {
 		{"ordered", i.Ordered},
 	}
 
+	if i.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *i.WriteConcern})
+	}
+
 	return args
 }
 
@@ -53,6 +57,10 @@ func updateToBSONDoc(u messages.Update) bson.D {
 		{"ordered", u.Ordered},
 	}
 
+	if u.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *u.WriteConcern})
+	}
+
 	return args
 }
 
@@ -72,6 +80,10 @@ func deleteToBSONDoc(d messages.Delete) bson.D {
 		{"delete", d.Collection},
 		{"deletes", deletes},
 		{"ordered", d.Ordered},
+	}
+
+	if d.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *d.WriteConcern})
 	}
 
 	return args

@@ -94,8 +94,8 @@ func createInsert(header MsgHeader, database string, args bson.M) (Insert, error
 		return Insert{}, fmt.Errorf("Insert command has no collection.")
 	}
 	docs := args["documents"]
-	documents, ok := docs.([]bson.D)
-	if !ok {
+	documents, err := convert.ConvertToBSONDocSlice(docs)
+	if err != nil {
 		return Insert{}, fmt.Errorf("Insert command has no documents.")
 	}
 	insert := Insert{
@@ -104,6 +104,11 @@ func createInsert(header MsgHeader, database string, args bson.M) (Insert, error
 		Collection: collection,
 		Documents:  documents,
 		Ordered:    convert.ToBool(args["ordered"], true),
+	}
+
+	writeConcern := convert.ToBSONMap(args["writeConcern"])
+	if writeConcern != nil {
+		insert.WriteConcern = &writeConcern
 	}
 
 	return insert, nil
@@ -140,6 +145,11 @@ func createDelete(header MsgHeader, database string, args bson.M) (Delete, error
 		Collection: collection,
 		Deletes:    deletes,
 		Ordered:    convert.ToBool(args["ordered"], true),
+	}
+
+	writeConcern := convert.ToBSONMap(args["writeConcern"])
+	if writeConcern != nil {
+		delObj.WriteConcern = &writeConcern
 	}
 
 	return delObj, nil
@@ -179,6 +189,11 @@ func createUpdate(header MsgHeader, database string, args bson.M) (Update, error
 		Collection: collection,
 		Updates:    updates,
 		Ordered:    convert.ToBool(args["ordered"]),
+	}
+
+	writeConcern := convert.ToBSONMap(args["writeConcern"])
+	if writeConcern != nil {
+		update.WriteConcern = &writeConcern
 	}
 
 	return update, nil

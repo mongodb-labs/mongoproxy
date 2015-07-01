@@ -152,9 +152,9 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 func (g GetMoreResponse) ToBSON() bson.M {
 	r := bson.M{}
 	cursor := bson.M{
-		"id":         g.CursorID,
-		"ns":         g.Database + "." + g.Collection,
-		"firstBatch": g.Documents,
+		"id":        g.CursorID,
+		"ns":        g.Database + "." + g.Collection,
+		"nextBatch": g.Documents,
 	}
 
 	r["cursor"] = cursor
@@ -164,7 +164,8 @@ func (g GetMoreResponse) ToBSON() bson.M {
 // A struct that represents a response to an insert command.
 type InsertResponse struct {
 
-	// the number of documents inserted
+	// the number of documents inserted. If the number is negative, the field
+	// will not be exported when writing to the wire protocol.
 	N int32
 
 	// a list of write errors
@@ -179,8 +180,12 @@ func (i InsertResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (i InsertResponse) ToBSON() bson.M {
-	r := bson.M{
-		"n": i.N,
+	r := bson.M{}
+
+	// some replies require the n field to not exist. The behavior thus is that if
+	// n is negative, it won't be sent as BSON.
+	if i.N >= 0 {
+		r["n"] = i.N
 	}
 	if i.WriteErrors != nil && len(i.WriteErrors) > 0 {
 		r["writeErrors"] = i.WriteErrors
@@ -192,10 +197,11 @@ func (i InsertResponse) ToBSON() bson.M {
 // A struct that represents a response to an update command.
 type UpdateResponse struct {
 
-	// the number of documents that matched the selector
+	// the number of documents that matched the selector. If the number is negative,
+	// N will not be exported when writing to the wire protocol.
 	N int32
 
-	// the number of documents actually updated
+	// the number of documents actually updated. Not exported on a negative value.
 	NModified int32
 
 	// the documents that didn't already exist and were upserted
@@ -212,9 +218,12 @@ func (u UpdateResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (u UpdateResponse) ToBSON() bson.M {
-	r := bson.M{
-		"n":         u.N,
-		"nModified": u.NModified,
+	r := bson.M{}
+	if u.N >= 0 {
+		r["n"] = u.N
+	}
+	if u.NModified >= 0 {
+		r["nModified"] = u.NModified
 	}
 	if u.Upserted != nil && len(u.Upserted) > 0 {
 		r["upserted"] = u.Upserted
@@ -228,7 +237,7 @@ func (u UpdateResponse) ToBSON() bson.M {
 
 // A struct that represents a response to a delete command.
 type DeleteResponse struct {
-	// the number of documents deleted
+	// the number of documents deleted. Not exported on a negative value.
 	N int32
 
 	// a list of write errors that occurred while deleting
@@ -242,8 +251,9 @@ func (d DeleteResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (d DeleteResponse) ToBSON() bson.M {
-	r := bson.M{
-		"n": d.N,
+	r := bson.M{}
+	if d.N >= 0 {
+		r["n"] = d.N
 	}
 	if d.WriteErrors != nil && len(d.WriteErrors) > 0 {
 		r["writeErrors"] = d.WriteErrors

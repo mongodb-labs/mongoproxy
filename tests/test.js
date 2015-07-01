@@ -14,35 +14,17 @@ var server = childProcess.spawn('go', [
 	stdio: 'inherit'
 });
 
-testFiles = fs.readdirSync(process.argv[2])
+testFile = process.argv[2]
 i = 0;
 
 // hack to make sure that the server is up before running tests.
 setTimeout(function() {
 
-	var id = setInterval(function() {
-		if (!testFiles[i]) {
-			clearInterval(id)
-			return;
-		}
-		var ext = testFiles[i].split('.').pop();
-		if (ext != 'js') {
-			i++;
-			return;
-		}
-
-		console.log("Testing: " + testFiles[i])
-		var shell = childProcess.spawnSync('mongo', [
-			process.argv[2] + '/' + testFiles[i],
-			'--port=8000'
-		], {
-			stdio: 'inherit'
-		})
-		i++;
-
-		if (i >= testFiles.length) {
-			clearInterval(id)
-		}
-	}, 100)
-
+	console.log("Testing: " + testFile)
+	var shell = childProcess.spawnSync('mongo', [
+		testFile,
+		'--port=8000'
+	], {
+		stdio: 'inherit'
+	})
 }, 2000)

@@ -56,7 +56,6 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			Reply: reply,
 		}
 
-		Log(NOTICE, "Reply: %#v\n", reply)
 		if convert.ToInt(reply["ok"]) == 0 {
 			// we have a command error.
 			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
@@ -120,7 +119,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		mongoSession.DB(insert.Database).Run(b, reply)
 
 		response := messages.InsertResponse{
-			N: convert.ToInt32(reply["n"]),
+			// default to -1 if n doesn't exist to hide the field on export
+			N: convert.ToInt32(reply["n"], -1),
 		}
 		writeErrors, err := convert.ConvertToBSONMapSlice(reply["writeErrors"])
 		if err == nil {
@@ -149,8 +149,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		mongoSession.DB(u.Database).Run(b, &reply)
 
 		response := messages.UpdateResponse{
-			N:         convert.ToInt32(bsonutil.FindValueByKey("n", reply)),
-			NModified: convert.ToInt32(bsonutil.FindValueByKey("nModified", reply)),
+			N:         convert.ToInt32(bsonutil.FindValueByKey("n", reply), -1),
+			NModified: convert.ToInt32(bsonutil.FindValueByKey("nModified", reply), -1),
 		}
 
 		writeErrors, err := convert.ConvertToBSONMapSlice(
@@ -189,7 +189,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		mongoSession.DB(d.Database).Run(b, reply)
 
 		response := messages.DeleteResponse{
-			N: convert.ToInt32(reply["n"]),
+			N: convert.ToInt32(reply["n"], -1),
 		}
 		writeErrors, err := convert.ConvertToBSONMapSlice(reply["writeErrors"])
 		if err == nil {
@@ -213,6 +213,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			next(req, res)
 			return
 		}
+
+		Log(DEBUG, "%#v\n", g)
 
 		// TODO: actually do something. Convert into an OP_GET_MORE, as mgo
 		// abstracts it away in the Iter object

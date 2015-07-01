@@ -19,6 +19,10 @@ func (f MockReq) Type() string {
 	return "request"
 }
 
+func (f MockReq) ID() int32 {
+	return 0
+}
+
 type MockRes struct {
 	Data []bson.M
 }

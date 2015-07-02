@@ -19,8 +19,11 @@ type ModuleChain struct {
 }
 
 // AddModule adds a module mod to the end of a given module chain.
-func (m *ModuleChain) AddModule(mod Module) *ModuleChain {
-	m.chain = append(m.chain, wrapModule(mod))
+func (m *ModuleChain) AddModule(mods ...Module) *ModuleChain {
+	for i := 0; i < len(mods); i++ {
+		m.chain = append(m.chain, wrapModule(mods[i]))
+	}
+	
 	return m
 }
 

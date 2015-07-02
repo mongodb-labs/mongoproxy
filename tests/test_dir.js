@@ -10,7 +10,7 @@ var build = childProcess.spawnSync('go', [
 	'build',
 	'-o',
 	__dirname + '/out',
-	__dirname + '/main/test-server.go'
+	__dirname + '/main/test_server.go'
 ], {
 	stdio: 'inherit'
 });

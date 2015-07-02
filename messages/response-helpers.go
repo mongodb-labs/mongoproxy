@@ -121,15 +121,13 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 // ToBSON converts a FindResponse to a BSON format that is compatible with
 // the command response spec
 func (f FindResponse) ToBSON() bson.M {
-	r := bson.M{}
-	cursor := bson.M{
-		"id":         f.CursorID,
-		"ns":         f.Database + "." + f.Collection,
-		"firstBatch": f.Documents,
+	return bson.M{
+		"cursor": bson.M{
+			"id":         f.CursorID,
+			"ns":         f.Database + "." + f.Collection,
+			"firstBatch": f.Documents,
+		},
 	}
-
-	r["cursor"] = cursor
-	return r
 }
 
 // A struct that represents a response to a getMore command.
@@ -185,15 +183,14 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 }
 
 func (g GetMoreResponse) ToBSON() bson.M {
-	r := bson.M{}
-	cursor := bson.M{
-		"id":        g.CursorID,
-		"ns":        g.Database + "." + g.Collection,
-		"nextBatch": g.Documents,
-	}
 
-	r["cursor"] = cursor
-	return r
+	return bson.M{
+		"cursor": bson.M{
+			"id":        g.CursorID,
+			"ns":        g.Database + "." + g.Collection,
+			"nextBatch": g.Documents,
+		},
+	}
 }
 
 // A struct that represents a response to an insert command.

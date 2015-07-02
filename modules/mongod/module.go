@@ -58,6 +58,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		if convert.ToInt(reply["ok"]) == 0 {
 			// we have a command error.
 			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
+			next(req, res)
+			return
 		}
 
 		res.Write(response)
@@ -160,6 +162,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		if convert.ToInt(reply["ok"]) == 0 {
 			// we have a command error.
 			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
+			next(req, res)
+			return
 		}
 
 		res.Write(response)
@@ -200,6 +204,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			// we have a command error.
 			res.Error(convert.ToInt32(bsonutil.FindValueByKey("code", reply)),
 				convert.ToString(bsonutil.FindValueByKey("errmsg", reply)))
+			next(req, res)
+			return
 		}
 
 		res.Write(response)
@@ -229,6 +235,8 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		if convert.ToInt(reply["ok"]) == 0 {
 			// we have a command error.
 			res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
+			next(req, res)
+			return
 		}
 
 		Log(NOTICE, "Reply: %#v\n", reply)

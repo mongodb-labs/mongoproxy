@@ -134,19 +134,54 @@ func (f FindResponse) ToBSON() bson.M {
 
 // A struct that represents a response to a getMore command.
 type GetMoreResponse struct {
-	CursorID   int64
-	Database   string
-	Collection string
-	Documents  []bson.D
+	CursorID      int64
+	Database      string
+	Collection    string
+	Documents     []bson.D
+	InvalidCursor bool // true if the cursor wasn't valid at the server.
 }
 
 func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
-	b := g.ToBSON()
-	b["ok"] = 1
+	resHeader := createResponseHeader(header)
+	startingFrom := int32(0)
 
-	// TODO: it's not really a good idea to use EncodeBSON with a GetMoreResponse,
-	// as some of the flags aren't set. Should revise at a later date.
-	return EncodeBSON(header, b)
+	flags := int32(8)
+
+	if g.InvalidCursor == true {
+		// invalid cursor. Return with no documents.
+		flags = convert.WriteBit32LE(flags, 0, true)
+		buf := bytes.NewBuffer([]byte{})
+
+		// write all documents
+		err := buffer.WriteToBuf(buf, resHeader, int32(flags), g.CursorID, int32(startingFrom),
+			int32(0))
+		if err != nil {
+			return nil, fmt.Errorf("error writing prepared response %v\n", err)
+		}
+
+		resp := setMessageSize(buf.Bytes())
+
+		return resp, nil
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+
+	// write all documents
+	err := buffer.WriteToBuf(buf, resHeader, int32(flags), g.CursorID, int32(startingFrom),
+		int32(len(g.Documents)))
+	if err != nil {
+		return nil, fmt.Errorf("error writing prepared response %v\n", err)
+	}
+	docBytes, err := marshalReplyDocs(nil, g.Documents)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling documents")
+	}
+
+	resp := append(buf.Bytes(), docBytes...)
+
+	resp = setMessageSize(resp)
+
+	return resp, nil
 }
 
 func (g GetMoreResponse) ToBSON() bson.M {

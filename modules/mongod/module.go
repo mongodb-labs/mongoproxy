@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-var port = 8000
-
 // A MongodModule takes the request, sends it to a mongod instance, and then
 // writes the response from mongod into the ResponseWriter before calling
 // the next module. It passes on requests unchanged.
@@ -33,6 +31,7 @@ func init() {
 		Log(ERROR, "%#v\n", err)
 		return
 	}
+	mongoSession.SetPrefetch(0)
 }
 
 func (m MongodModule) Process(req messages.Requester, res messages.Responder,
@@ -72,36 +71,65 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		}
 
 		c := mongoSession.DB(f.Database).C(f.Collection)
-		query := c.Find(f.Filter).Limit(int(f.Limit)).Skip(int(f.Skip))
+		query := c.Find(f.Filter).Batch(int(f.Limit)).Skip(int(f.Skip)).Prefetch(0)
 
 		if f.Projection != nil {
 			query = query.Select(f.Projection)
 		}
 
+		var iter = query.Iter()
 		var results []bson.D
 
-		// TODO: implement getMore properly, since this behavior is
-		// different than the default shell's. Will just dump all of the
-		// documents instead of using the cursor and batches.
-		err = query.All(&results)
+		cursorID := int64(0)
 
-		if err != nil {
-			Log(ERROR, "Error on Find Command: %#v\n", err)
+		if f.Limit > 0 {
+			// only store the amount specified by the limit
+			for i := 0; i < int(f.Limit); i++ {
+				var result bson.D
+				ok := iter.Next(&result)
+				if !ok {
+					err = iter.Err()
+					if err != nil {
+						Log(ERROR, "Error on Find Command: %#v\n", err)
 
-			// log an error if we can
-			qErr, ok := err.(*mgo.QueryError)
-			if ok {
-				res.Error(int32(qErr.Code), qErr.Message)
+						// log an error if we can
+						qErr, ok := err.(*mgo.QueryError)
+						if ok {
+							res.Error(int32(qErr.Code), qErr.Message)
+						}
+						iter.Close()
+						next(req, res)
+						return
+					}
+					// we ran out of documents, but didn't have an error
+					break
+				}
+				if cursorID == 0 {
+					cursorID = iter.CursorID()
+				}
+				results = append(results, result)
 			}
-			next(req, res)
-			return
+		} else {
+			// dump all of them
+			err = iter.All(&results)
+			if err != nil {
+				Log(ERROR, "Error on Find Command: %#v\n", err)
+
+				// log an error if we can
+				qErr, ok := err.(*mgo.QueryError)
+				if ok {
+					res.Error(int32(qErr.Code), qErr.Message)
+				}
+				next(req, res)
+				return
+			}
 		}
 
 		response := messages.FindResponse{
 			Database:   f.Database,
 			Collection: f.Collection,
 			Documents:  results,
-			// TODO: retrieve CursorID
+			CursorID:   cursorID,
 		}
 
 		res.Write(response)
@@ -214,15 +242,68 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			next(req, res)
 			return
 		}
-
 		Log(DEBUG, "%#v\n", g)
 
-		// TODO: actually do something. Convert into an OP_GET_MORE, as mgo
-		// abstracts it away in the Iter object
+		// make an iterable to get more
+		c := mongoSession.DB(g.Database).C(g.Collection)
+		batch := make([]bson.Raw, 0)
+		iter := c.NewIter(mongoSession, batch, g.CursorID, nil)
+		iter.SetBatch(int(g.BatchSize))
+
+		var results []bson.D
+		cursorID := int64(0)
+
+		for i := 0; i < int(g.BatchSize); i++ {
+			var result bson.D
+			ok := iter.Next(&result)
+			if !ok {
+				err = iter.Err()
+				if err != nil {
+					Log(ERROR, "Error on GetMore Command: %#v\n", err)
+
+					if err == mgo.ErrCursor {
+						// we return an empty getMore with an errored out
+						// cursor
+						response := messages.GetMoreResponse{
+							CursorID:      cursorID,
+							Database:      g.Database,
+							Collection:    g.Collection,
+							InvalidCursor: true,
+						}
+						res.Write(response)
+						next(req, res)
+						return
+					}
+
+					// log an error if we can
+					qErr, ok := err.(*mgo.QueryError)
+					if ok {
+						res.Error(int32(qErr.Code), qErr.Message)
+					}
+					iter.Close()
+					next(req, res)
+					return
+				}
+				break
+			}
+			if cursorID == 0 {
+				cursorID = iter.CursorID()
+			}
+			results = append(results, result)
+		}
+
+		response := messages.GetMoreResponse{
+			CursorID:   cursorID,
+			Database:   g.Database,
+			Collection: g.Collection,
+			Documents:  results,
+		}
+
+		res.Write(response)
 	default:
 		Log(ERROR, "Unsupported operation")
 	}
-	// mongoSession.Close()
+
 	next(req, res)
 
 }

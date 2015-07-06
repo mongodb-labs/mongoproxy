@@ -48,10 +48,6 @@ func (c Command) Type() string {
 	return CommandType
 }
 
-func (c Command) ID() int32 {
-	return c.RequestID
-}
-
 func (c Command) ToBSON() bson.D {
 	nameArg, ok := c.Args[c.CommandName]
 	if !ok {
@@ -101,10 +97,6 @@ func (f Find) Type() string {
 	return FindType
 }
 
-func (f Find) ID() int32 {
-	return f.RequestID
-}
-
 // the struct for the 'insert' command
 type Insert struct {
 	RequestID    int32
@@ -117,10 +109,6 @@ type Insert struct {
 
 func (i Insert) Type() string {
 	return InsertType
-}
-
-func (i Insert) ID() int32 {
-	return i.RequestID
 }
 
 func (i Insert) ToBSON() bson.D {
@@ -156,10 +144,6 @@ type Update struct {
 
 func (u Update) Type() string {
 	return UpdateType
-}
-
-func (u Update) ID() int32 {
-	return u.RequestID
 }
 
 func (u Update) ToBSON() bson.D {
@@ -206,9 +190,6 @@ type Delete struct {
 func (d Delete) Type() string {
 	return DeleteType
 }
-func (d Delete) ID() int32 {
-	return d.RequestID
-}
 
 func (d Delete) ToBSON() bson.D {
 	deletes := make([]bson.M, len(d.Deletes))
@@ -245,8 +226,4 @@ type GetMore struct {
 
 func (g GetMore) Type() string {
 	return GetMoreType
-}
-
-func (g GetMore) ID() int32 {
-	return g.RequestID
 }

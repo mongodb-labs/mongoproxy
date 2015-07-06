@@ -7,6 +7,7 @@ import (
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
@@ -137,6 +138,15 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 		// TODO: convert those all to wire protocol messages and send
 		// to mongod
 		Log(NOTICE, "%#v\n", updates)
+
+		for i := 0; i < len(updates); i++ {
+			u := updates[i]
+			b := u.ToBSON()
+
+			reply := bson.D{}
+			mongoSession.DB(u.Database).Run(b, &reply)
+			Log(NOTICE, "%#v\n", reply)
+		}
 
 	}
 

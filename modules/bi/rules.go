@@ -66,8 +66,9 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 
 	timeField := strconv.Itoa(M)
 
-	totalUpdate := bson.DocElem{"total", bson.D{{"$inc", value}}}
-	fieldUpdate := bson.DocElem{granularityField, bson.D{{timeField, bson.D{{"$inc", value}}}}}
+	totalUpdate := bson.DocElem{"$inc", bson.D{{"total", value}}}
+	fieldUpdate := bson.DocElem{"$inc", bson.D{{granularityField + "." + timeField, value}}}
+
 	doc := bson.D{
 		totalUpdate, fieldUpdate,
 	}

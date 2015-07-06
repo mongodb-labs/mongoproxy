@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-var maxWireVer = 3
+var maxWireVersion = 3
 
 // a 'database' in memory. The string keys are the collections, which
 // have an array of bson documents.
@@ -92,7 +92,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r.N = 5
 		r.NModified = 4
 
-		// res.Write(r)
 		res.Error(0, "not supported")
 	case messages.DeleteType:
 		opd, err := messages.ToDeleteRequest(req)
@@ -103,7 +102,6 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		r := messages.DeleteResponse{}
 		r.N = 1
 
-		res.Write(r)
 		res.Error(0, "not supported")
 	case messages.CommandType:
 		command, err := messages.ToCommandRequest(req)
@@ -120,7 +118,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 			r["ismaster"] = true
 			r["secondary"] = false
 			r["localTime"] = bson.Now()
-			r["maxWireVersion"] = maxWireVer
+			r["maxWireVersion"] = maxWireVersion
 			r["minWireVersion"] = 0
 			r["maxWriteBatchSize"] = 1000
 			r["maxBsonObjectSize"] = 16777216
@@ -154,7 +152,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 			normalLog[0] = "hello world"
 			normalLog[1] = "this is strange"
 			warningsLog := make([]string, 0)
-			if maxWireVer < 2 {
+			if maxWireVersion < 2 {
 				warningsLog = append(warningsLog, "Using the various OpCodes rather than commands.")
 			}
 

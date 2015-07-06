@@ -19,4 +19,4 @@ To run integration tests:
 
 	node tests/test <js file to test>
 
-	node tests/test-dir <directory of files to test>
+	node tests/test_dir <directory of files to test>

@@ -1,4 +1,4 @@
-// Package bsonutil provides a utility function to retrieve values from bson documents.
+// Package bsonutil provides a utility function to retrieve values from BSON documents.
 package bsonutil
 
 import (

@@ -145,7 +145,7 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 
 	flags := int32(8)
 
-	if g.InvalidCursor == true {
+	if g.InvalidCursor {
 		// invalid cursor. Return with no documents.
 		flags = convert.WriteBit32LE(flags, 0, true)
 		buf := bytes.NewBuffer([]byte{})

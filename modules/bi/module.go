@@ -1,15 +1,16 @@
 package bi
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
+	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/modules"
+	"github.com/mongodbinc-interns/mongoproxy/server"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -56,7 +57,7 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 
 	switch granularity {
 	case "M":
-		M = t.Month()
+		M = int(t.Month())
 		granularityField = "month"
 	case "D":
 		M = t.Day()
@@ -77,7 +78,7 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 	timeField := strconv.Itoa(M)
 
 	totalUpdate := bson.DocElem{"total", bson.D{{"$inc", value}}}
-	fieldUpdate := bson.DocElem{granularityField, bson.D{{timeField, bson.D{"$inc", value}}}}
+	fieldUpdate := bson.DocElem{granularityField, bson.D{{timeField, bson.D{{"$inc", value}}}}}
 	doc := bson.D{
 		totalUpdate, fieldUpdate,
 	}
@@ -86,7 +87,7 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 
 }
 func (b BIModule) Process(req messages.Requester, res messages.Responder,
-	next modules.PipelineFunc) {
+	next server.PipelineFunc) {
 
 	resNext := messages.ModuleResponse{}
 	next(req, &resNext)
@@ -116,6 +117,7 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 			// and pass it on to mongod
 			if opi.Collection != rule.OriginCollection ||
 				opi.Database != rule.OriginDatabase {
+				Log(ERROR, "Database and collection do not match: %v.%v vs %v.%v", opi.Database, opi.Collection, rule.OriginDatabase, rule.OriginCollection)
 				continue
 			}
 
@@ -134,6 +136,7 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 				case "s":
 					suffix = "-second"
 				default:
+					Log(ERROR, "%v is not a time granularity\n", granularity)
 					continue
 				}
 
@@ -149,18 +152,27 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 
 					selectorRaw, err := createSelector(time, granularity, rule.ValueField)
 
-					valueRaw, ok := doc[rule.ValueField]
-					if !ok {
+					if err != nil {
+						continue
+					}
+
+					valueRaw := bsonutil.FindValueByKey(rule.ValueField, doc)
+					if valueRaw == nil {
 						continue // no value to actually add an update for
 					}
 
 					value := convert.ToFloat64(valueRaw)
 					if value == 0 {
+						Log(ERROR, "Value was 0\n")
 						continue // no need for an update if the value is 0
 					}
 
 					// TODO: actually grab the value
 					updateRaw, err := createUpdate(time, granularity, value)
+
+					if err != nil {
+						continue
+					}
 
 					single := messages.SingleUpdate{
 						Upsert:   true,
@@ -177,7 +189,7 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 
 		// TODO: convert those all to wire protocol messages and send
 		// to mongod
-		Log(INFO, "%#v\n", updates)
+		Log(NOTICE, "%#v\n", updates)
 
 	}
 

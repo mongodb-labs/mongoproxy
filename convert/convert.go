@@ -114,6 +114,33 @@ func ToInt64(in interface{}, def ...int64) int64 {
 	return n
 }
 
+func ToFloat64(in interface{}, def ...float64) float64 {
+	n, ok := in.(float64)
+	if ok {
+		return n
+	}
+	n2, ok := in.(int)
+	if ok {
+		return float64(n2)
+	}
+	n3, ok := in.(int32)
+	if ok {
+		return float64(n3)
+	}
+	n4, ok := in.(int64)
+	if ok {
+		return float64(n4)
+	}
+	n5, ok := in.(float32)
+	if ok {
+		return float64(n5)
+	}
+	if len(def) == 0 {
+		return 0
+	}
+	return def[0]
+}
+
 // ToBool converts an interface{} to a bool. A default value can be provided
 // if the conversion fails. Any argument after the 2nd one will be ignored.
 func ToBool(in interface{}, def ...bool) bool {

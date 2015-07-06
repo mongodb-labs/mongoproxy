@@ -6,12 +6,31 @@ import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
-
+	"gopkg.in/mgo.v2"
 	"time"
 )
 
 type BIModule struct {
 	Rules []Rule
+}
+
+var mongoSession *mgo.Session
+var mongoDBDialInfo = &mgo.DialInfo{
+	// TODO: Allow configurable connection info
+	Addrs:    []string{"localhost:27017"},
+	Timeout:  60 * time.Second,
+	Database: "test",
+}
+
+func init() {
+	var err error
+	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
+	if err != nil {
+		Log(ERROR, "%#v\n", err)
+		return
+	}
+
+	mongoSession.SetPrefetch(0)
 }
 
 func (b BIModule) Process(req messages.Requester, res messages.Responder,

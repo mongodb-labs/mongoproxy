@@ -46,7 +46,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		b := commandToBSONDoc(command)
+		b := command.ToBSON()
 
 		reply := bson.M{}
 		mongoSession.DB(command.Database).Run(b, reply)
@@ -144,7 +144,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		b := insertToBSONDoc(insert)
+		b := insert.ToBSON()
 
 		reply := bson.M{}
 		mongoSession.DB(insert.Database).Run(b, reply)
@@ -176,7 +176,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		b := updateToBSONDoc(u)
+		b := u.ToBSON()
 
 		reply := bson.D{}
 		mongoSession.DB(u.Database).Run(b, &reply)
@@ -218,7 +218,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		b := deleteToBSONDoc(d)
+		b := d.ToBSON()
 
 		reply := bson.M{}
 		mongoSession.DB(d.Database).Run(b, reply)

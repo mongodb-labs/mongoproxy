@@ -52,6 +52,24 @@ func (c Command) ID() int32 {
 	return c.RequestID
 }
 
+func (c Command) ToBSON() bson.D {
+	nameArg, ok := c.Args[c.CommandName]
+	if !ok {
+		nameArg = 1
+	}
+	args := bson.D{
+		{c.CommandName, nameArg},
+	}
+
+	for arg, value := range c.Args {
+		if arg != c.CommandName {
+			args = append(args, bson.DocElem{arg, value})
+		}
+	}
+
+	return args
+}
+
 // GetArg takes the name of an argument for the command and returns the
 // value of that argument.
 func (c Command) GetArg(arg string) interface{} {
@@ -105,6 +123,20 @@ func (i Insert) ID() int32 {
 	return i.RequestID
 }
 
+func (i Insert) ToBSON() bson.D {
+	args := bson.D{
+		{"insert", i.Collection},
+		{"documents", i.Documents},
+		{"ordered", i.Ordered},
+	}
+
+	if i.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *i.WriteConcern})
+	}
+
+	return args
+}
+
 type SingleUpdate struct {
 	Selector bson.D
 	Update   bson.D
@@ -130,6 +162,32 @@ func (u Update) ID() int32 {
 	return u.RequestID
 }
 
+func (u Update) ToBSON() bson.D {
+	updates := make([]bson.M, len(u.Updates))
+
+	for i := 0; i < len(u.Updates); i++ {
+		singleUpdate := u.Updates[i]
+		updates[i] = bson.M{
+			"q":      singleUpdate.Selector,
+			"u":      singleUpdate.Update,
+			"upsert": singleUpdate.Upsert,
+			"multi":  singleUpdate.Multi,
+		}
+	}
+
+	args := bson.D{
+		{"update", u.Collection},
+		{"updates", updates},
+		{"ordered", u.Ordered},
+	}
+
+	if u.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *u.WriteConcern})
+	}
+
+	return args
+}
+
 type SingleDelete struct {
 	Selector bson.D
 	Limit    int32
@@ -150,6 +208,30 @@ func (d Delete) Type() string {
 }
 func (d Delete) ID() int32 {
 	return d.RequestID
+}
+
+func (d Delete) ToBSON() bson.D {
+	deletes := make([]bson.M, len(d.Deletes))
+
+	for i := 0; i < len(d.Deletes); i++ {
+		singleDelete := d.Deletes[i]
+		deletes[i] = bson.M{
+			"q":     singleDelete.Selector,
+			"limit": singleDelete.Limit,
+		}
+	}
+
+	args := bson.D{
+		{"delete", d.Collection},
+		{"deletes", deletes},
+		{"ordered", d.Ordered},
+	}
+
+	if d.WriteConcern != nil {
+		args = append(args, bson.DocElem{"writeConcern", *d.WriteConcern})
+	}
+
+	return args
 }
 
 // struct for 'getMore' command

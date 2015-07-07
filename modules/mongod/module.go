@@ -31,6 +31,8 @@ func init() {
 		Log(ERROR, "%#v\n", err)
 		return
 	}
+
+	// don't fetch new documents unless the client sends a getMore request
 	mongoSession.SetPrefetch(0)
 }
 
@@ -41,7 +43,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.CommandType:
 		command, err := messages.ToCommandRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(ERROR, "Error converting to command: %#v\n", err)
 			next(req, res)
 			return
 		}
@@ -49,7 +51,16 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := command.ToBSON()
 
 		reply := bson.M{}
-		mongoSession.DB(command.Database).Run(b, reply)
+		err = mongoSession.DB(command.Database).Run(b, reply)
+		if err != nil {
+			// log an error if we can
+			qErr, ok := err.(*mgo.QueryError)
+			if ok {
+				res.Error(int32(qErr.Code), qErr.Message)
+			}
+			next(req, res)
+			return
+		}
 
 		response := messages.CommandResponse{
 			Reply: reply,
@@ -147,7 +158,16 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := insert.ToBSON()
 
 		reply := bson.M{}
-		mongoSession.DB(insert.Database).Run(b, reply)
+		err = mongoSession.DB(insert.Database).Run(b, reply)
+		if err != nil {
+			// log an error if we can
+			qErr, ok := err.(*mgo.QueryError)
+			if ok {
+				res.Error(int32(qErr.Code), qErr.Message)
+			}
+			next(req, res)
+			return
+		}
 
 		response := messages.InsertResponse{
 			// default to -1 if n doesn't exist to hide the field on export
@@ -179,7 +199,16 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := u.ToBSON()
 
 		reply := bson.D{}
-		mongoSession.DB(u.Database).Run(b, &reply)
+		err = mongoSession.DB(u.Database).Run(b, &reply)
+		if err != nil {
+			// log an error if we can
+			qErr, ok := err.(*mgo.QueryError)
+			if ok {
+				res.Error(int32(qErr.Code), qErr.Message)
+			}
+			next(req, res)
+			return
+		}
 
 		response := messages.UpdateResponse{
 			N:         convert.ToInt32(bsonutil.FindValueByKey("n", reply), -1),
@@ -221,7 +250,16 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := d.ToBSON()
 
 		reply := bson.M{}
-		mongoSession.DB(d.Database).Run(b, reply)
+		err = mongoSession.DB(d.Database).Run(b, reply)
+		if err != nil {
+			// log an error if we can
+			qErr, ok := err.(*mgo.QueryError)
+			if ok {
+				res.Error(int32(qErr.Code), qErr.Message)
+			}
+			next(req, res)
+			return
+		}
 
 		response := messages.DeleteResponse{
 			N: convert.ToInt32(reply["n"], -1),
@@ -309,7 +347,7 @@ func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(response)
 	default:
-		Log(ERROR, "Unsupported operation")
+		Log(ERROR, "Unsupported operation: %v", req.Type())
 	}
 
 	next(req, res)

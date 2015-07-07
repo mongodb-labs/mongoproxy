@@ -29,7 +29,7 @@ func main() {
 	module := mongod.MongodModule{}
 	// initialize the pipeline
 	chain := server.CreateChain()
-	chain.AddModule(module)
+	chain.AddModules(module)
 	pipeline := server.BuildPipeline(chain)
 
 	mongoproxy.Start(port, pipeline)

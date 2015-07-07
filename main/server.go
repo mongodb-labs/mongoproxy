@@ -30,7 +30,7 @@ func main() {
 
 	// initialize the pipeline
 	chain := server.CreateChain()
-	chain.AddModule(mockule)
+	chain.AddModules(mockule)
 	pipeline := server.BuildPipeline(chain)
 
 	mongoproxy.Start(port, pipeline)

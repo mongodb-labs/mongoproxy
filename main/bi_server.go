@@ -49,8 +49,7 @@ func main() {
 	// initialize the pipeline
 	chain := server.CreateChain()
 
-	chain.AddModule(biModule)
-	chain.AddModule(mockule)
+	chain.AddModules(biModule, mockule)
 
 	pipeline := server.BuildPipeline(chain)
 

@@ -33,8 +33,8 @@ func main() {
 	biModule := bi.BIModule{}
 
 	t := make([]string, 2)
-	t[0] = "D"
-	t[1] = "m"
+	t[0] = bi.Daily
+	t[1] = bi.Minutely
 
 	rule := bi.Rule{
 		OriginDatabase:    "test",

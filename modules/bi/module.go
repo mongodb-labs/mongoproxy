@@ -65,26 +65,14 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 			// and pass it on to mongod
 			if opi.Collection != rule.OriginCollection ||
 				opi.Database != rule.OriginDatabase {
-				Log(ERROR, "Database and collection do not match: %v.%v vs %v.%v", opi.Database, opi.Collection, rule.OriginDatabase, rule.OriginCollection)
 				continue
 			}
 
 			for j := 0; j < len(rule.TimeGranularities); j++ {
 				granularity := rule.TimeGranularities[j]
-				var suffix string
-				switch granularity {
-				case "M":
-					suffix = "-month"
-				case "D":
-					suffix = "-day"
-				case "h":
-					suffix = "-hour"
-				case "m":
-					suffix = "-minute"
-				case "s":
-					suffix = "-second"
-				default:
-					Log(ERROR, "%v is not a time granularity\n", granularity)
+				suffix, err := getSuffix(granularity)
+				if err != nil {
+					Log(ERROR, "%v is not a time granularity", granularity)
 					continue
 				}
 

@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+const (
+	Monthly  string = "M"
+	Daily    string = "D"
+	Hourly   string = "h"
+	Minutely string = "m"
+	Secondly string = "s"
+)
+
 type Rule struct {
 	OriginDatabase    string
 	OriginCollection  string
@@ -17,18 +25,35 @@ type Rule struct {
 	TimeField         *time.Time
 }
 
+func getSuffix(granularity string) (string, error) {
+	switch granularity {
+	case Monthly:
+		return "-month", nil
+	case Daily:
+		return "-day", nil
+	case Hourly:
+		return "-hour", nil
+	case Minutely:
+		return "-minute", nil
+	case Secondly:
+		return "-second", nil
+	default:
+		return "", fmt.Errorf("Not a valid time granularity")
+	}
+}
+
 func createSelector(t time.Time, granularity string, valueField string) (bson.D, error) {
 	var start time.Time
 	switch granularity {
-	case "M":
+	case Monthly:
 		start = time.Date(t.Year(), time.January, 1, 0, 0, 0, 0, t.Location())
-	case "D":
+	case Daily:
 		start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-	case "h":
+	case Hourly:
 		start = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-	case "m":
+	case Minutely:
 		start = t.Round(time.Hour)
-	case "s":
+	case Secondly:
 		start = t.Round(time.Minute)
 	default:
 		return nil, fmt.Errorf("Not a valid time granularity")
@@ -45,19 +70,19 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 	var granularityField string
 
 	switch granularity {
-	case "M":
+	case Monthly:
 		M = int(t.Month())
 		granularityField = "month"
-	case "D":
+	case Daily:
 		M = t.Day()
 		granularityField = "day"
-	case "h":
+	case Hourly:
 		M = t.Hour()
 		granularityField = "hour"
-	case "m":
+	case Minutely:
 		M = t.Minute()
 		granularityField = "minute"
-	case "s":
+	case Secondly:
 		M = t.Second()
 		granularityField = "second"
 	default:

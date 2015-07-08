@@ -1,0 +1,31 @@
+{
+  "name": "bi-module-frontend",
+  "version": "0.0.1",
+  "description": "",
+  "main": "server.go",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf public/js/build",
+    "start": "npm run build && cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
+    "serve": "cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
+    "build:css": "mkdir -p public/build && ./node_modules/.bin/lessc ./public/css/main.less > ./public/build/main.css",
+    "build:js": "mkdir -p public/build && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/main.js > ./public/build/main.js",
+    "watch:js": "mkdir -p public/build && ./node_modules/.bin/watchify -t [ reactify --es6 ] ./public/js/main.js -o ./public/build/main.js -v",
+    "build": "npm run build:js && npm run build:css"
+  },
+  "dependencies": {
+    "bootstrap": "^3.3.5",
+    "c3": "^0.4.10",
+    "jquery": "^2.1.4",
+    "lodash": "^3.10.0",
+    "moment": "^2.10.3",
+    "react": "^0.13.3",
+    "react-bootstrap": "^0.23.7"
+  },
+  "devDependencies": {
+    "browserify": "^10.2.4",
+    "less": "^2.5.1",
+    "reactify": "^1.1.1",
+    "watchify": "^3.2.3"
+  }
+}

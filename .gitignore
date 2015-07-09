@@ -11,3 +11,4 @@ coverage.out
 out
 
 node_modules/
+build/

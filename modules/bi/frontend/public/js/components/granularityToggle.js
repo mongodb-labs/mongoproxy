@@ -14,11 +14,11 @@ var GranularityToggle = React.createClass({
 	componentDidMount: function() {
 		var self = this;
 		var b = [];
-		for (var i = 0; i < self.props.rule.TimeGranularities.length; i++) {
+		for (var i = 0; i < self.props.granularities.length; i++) {
 			
 			b.push(
-				<label className="btn btn-default">
-                    <input type="radio" id={self.props.rule.ValueField + self.props.rule.TimeGranularities[i]} name={self.props.rule.TimeGranularities[i]} value={i} /> {self.props.rule.TimeGranularities[i]}
+				<label key={this.props.panelID+i} className="btn btn-default">
+                    <input type="radio" name={self.props.granularities[i]} value={i} /> {self.props.granularities[i]}
                 </label> 
 			)
 		}	

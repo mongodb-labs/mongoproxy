@@ -9,7 +9,21 @@ var TimeseriesChart = React.createClass({
         this.chart = c3.generate({
             bindto: "#" + self.props.panelID,
             data: {
-                json: (data || [])
+                x: "time",
+                xFormat: '%Y-%m-%d %H:%M:%S',
+                columns: (data || [])
+            },
+            type: "spline",
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        //              format : "%m/%d" // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+                        format: "%Y-%m-%d %H:%M:%S", // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+                        count: 5,
+                    },
+
+                }
             }
         });
     },
@@ -21,7 +35,7 @@ var TimeseriesChart = React.createClass({
     componentWillReceiveProps: function(newProps) {
         console.log("Received props")
         this.chart.load({
-            json: newProps.data
+            columns: newProps.data
         }); // or whatever API you need
     },
 

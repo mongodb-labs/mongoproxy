@@ -30,10 +30,10 @@ func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, va
 		startRange = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
 		collectionName += "-hour"
 	case bi.Minutely:
-		startRange = start.Round(time.Hour)
+		startRange = time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), 0, 0, 0, start.Location())
 		collectionName += "-minute"
 	case bi.Secondly:
-		startRange = start.Round(time.Minute)
+		startRange = time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute(), 0, 0, start.Location())
 		collectionName += "-second"
 	default:
 		return nil, fmt.Errorf("%v is not a valid time granularity", granularity)

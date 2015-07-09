@@ -5,7 +5,7 @@ var GranularityToggle = require('../components/granularityToggle')
 var RuleSelector = require('../components/ruleSelector')
 var TimeseriesChart = require('../components/timeseriesChart')
 
-var getMinutes = require('../utils/minutesToChart')
+var getMetrics = require('../utils/metricsToChart')
 
 var GraphPanel = React.createClass({
 
@@ -19,10 +19,16 @@ var GraphPanel = React.createClass({
 		var self = this;
 
 		setInterval(function() {
-			getMinutes(self.props.rules, 0, function(data) {
-				var graphData = {};
+			getMetrics(self.props.rules, "s", 0, function(data) {
+				var graphData = [];
 				console.log(data);
-				graphData[self.props.rules[0].ValueField] = data;
+				graphData[0] = data.time;
+				graphData[1] = data.data;
+
+				graphData[0].unshift('time');
+				graphData[1].unshift('price');
+
+				console.log(graphData);
 				self.setState({
 					data: graphData
 				});

@@ -105,6 +105,22 @@ func TestModuleChaining(t *testing.T) {
 				So(w.Data[0], ShouldEqual, msgOne)
 				So(w.Data[1], ShouldEqual, msgTwo)
 			})
+
+			Convey("in the correct order, as one function call", func() {
+				m1 := ModuleOne{}
+				m2 := ModuleTwo{}
+				chain := CreateChain()
+				chain.AddModules(m2, m1)
+				r := MockReq{}
+				w := &MockRes{
+					Data: make([]bson.M, 0),
+				}
+				pipeline := BuildPipeline(chain)
+				pipeline(r, w)
+
+				So(w.Data[0], ShouldEqual, msgOne)
+				So(w.Data[1], ShouldEqual, msgTwo)
+			})
 		})
 
 	})

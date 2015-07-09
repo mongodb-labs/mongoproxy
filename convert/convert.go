@@ -4,6 +4,7 @@ package convert
 import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"strconv"
 )
 
 // ConvertToInt32LE converts the first four bytes of a slice to a 32-bit little endian integer.
@@ -114,31 +115,50 @@ func ToInt64(in interface{}, def ...int64) int64 {
 	return n
 }
 
+// ToInt64 converts an interface{} to a float64. A default value can be provided
+// if the conversion fails, otherwise 0 will be returned. Any argument after
+// the 2nd one will be ignored.
 func ToFloat64(in interface{}, def ...float64) float64 {
-	n, ok := in.(float64)
-	if ok {
-		return n
+	switch i := in.(type) {
+	case float64:
+		return float64(i)
+	case float32:
+		return float64(i)
+	case int64:
+		return float64(i)
+	case int32:
+		return float64(i)
+	case int16:
+		return float64(i)
+	case int8:
+		return float64(i)
+	case uint64:
+		return float64(i)
+	case uint32:
+		return float64(i)
+	case uint16:
+		return float64(i)
+	case uint8:
+		return float64(i)
+	case int:
+		return float64(i)
+	case uint:
+		return float64(i)
+	case string:
+		f, err := strconv.ParseFloat(i, 64)
+		if err != nil {
+			if len(def) > 0 {
+				return def[0]
+			}
+			return float64(0)
+		}
+		return f
+	default:
+		if len(def) > 0 {
+			return def[0]
+		}
+		return float64(0)
 	}
-	n2, ok := in.(int)
-	if ok {
-		return float64(n2)
-	}
-	n3, ok := in.(int32)
-	if ok {
-		return float64(n3)
-	}
-	n4, ok := in.(int64)
-	if ok {
-		return float64(n4)
-	}
-	n5, ok := in.(float32)
-	if ok {
-		return float64(n5)
-	}
-	if len(def) == 0 {
-		return 0
-	}
-	return def[0]
 }
 
 // ToBool converts an interface{} to a bool. A default value can be provided

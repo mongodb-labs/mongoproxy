@@ -1,8 +1,8 @@
+// Package bi contains a real-time reporting and analytics module for the Mongo Proxy.
+// It receives requests from a mongo client and creates time series data based on user-defined criteria.
 package bi
 
 import (
-	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
-	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
@@ -11,10 +11,15 @@ import (
 	"time"
 )
 
+// BIModule calls the next module immediately, and then collects and aggregates
+// data from inserts that successfully traveled the pipeline. The requests it analyzes
+// and the metrics it aggregates is based upon its rules.
 type BIModule struct {
 	Rules []Rule
 }
 
+// Temporary code to set up a connection with mongod. Should eventually be replaced
+// by user-set configuration.
 var mongoSession *mgo.Session
 var mongoDBDialInfo = &mgo.DialInfo{
 	// TODO: Allow configurable connection info
@@ -23,6 +28,7 @@ var mongoDBDialInfo = &mgo.DialInfo{
 	Database: "test",
 }
 
+// TODO: have a specific function for configuring modules.
 func init() {
 	var err error
 	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
@@ -72,7 +78,7 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 				granularity := rule.TimeGranularities[j]
 				suffix, err := getSuffix(granularity)
 				if err != nil {
-					Log(ERROR, "%v is not a time granularity", granularity)
+					Log(INFO, "%v is not a time granularity", granularity)
 					continue
 				}
 
@@ -85,47 +91,17 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 				for k := 0; k < len(opi.Documents); k++ {
 
 					doc := opi.Documents[k]
-
-					selectorRaw, err := createSelector(time, granularity, rule.ValueField)
-
+					single, err := createSingleUpdate(doc, time, granularity, rule)
 					if err != nil {
 						continue
 					}
 
-					valueRaw := bsonutil.FindValueByKey(rule.ValueField, doc)
-					if valueRaw == nil {
-						continue // no value to actually add an update for
-					}
-
-					value := convert.ToFloat64(valueRaw)
-					if value == 0 {
-						Log(ERROR, "Value was 0\n")
-						continue // no need for an update if the value is 0
-					}
-
-					// TODO: actually grab the value
-					updateRaw, err := createUpdate(time, granularity, value)
-
-					if err != nil {
-						continue
-					}
-
-					single := messages.SingleUpdate{
-						Upsert:   true,
-						Selector: selectorRaw,
-						Update:   updateRaw,
-					}
-
-					update.Updates = append(update.Updates, single)
+					update.Updates = append(update.Updates, *single)
 
 				}
 				updates = append(updates, update)
 			}
 		}
-
-		// TODO: convert those all to wire protocol messages and send
-		// to mongod
-		Log(NOTICE, "%#v\n", updates)
 
 		for i := 0; i < len(updates); i++ {
 			u := updates[i]
@@ -133,7 +109,6 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 
 			reply := bson.D{}
 			mongoSession.DB(u.Database).Run(b, &reply)
-			Log(NOTICE, "%#v\n", reply)
 		}
 
 	}

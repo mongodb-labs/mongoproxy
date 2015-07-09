@@ -1,3 +1,6 @@
+// Package mongod contains a module that acts as a backend for Mongo proxy,
+// which connects to a mongod instance and sends requests to (and receives responses from)
+// the server.
 package mongod
 
 import (
@@ -16,6 +19,8 @@ import (
 // the next module. It passes on requests unchanged.
 type MongodModule struct{}
 
+// Temporary code to set up a connection with mongod. Should eventually be replaced
+// by a module-wide configuration.
 var mongoSession *mgo.Session
 var mongoDBDialInfo = &mgo.DialInfo{
 	// TODO: Allow configurable connection info
@@ -24,6 +29,7 @@ var mongoDBDialInfo = &mgo.DialInfo{
 	Database: "test",
 }
 
+// TODO: have a specific function for configuring modules.
 func init() {
 	var err error
 	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)

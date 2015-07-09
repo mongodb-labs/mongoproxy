@@ -39,13 +39,13 @@ func (c CommandResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	err := buffer.WriteToBuf(buf, resHeader, int32(flags), int64(0), int32(startingFrom),
 		int32(1+len(c.Documents)))
 	if err != nil {
-		return nil, fmt.Errorf("error writing prepared response %v\n", err)
+		return nil, fmt.Errorf("error writing prepared response: %v", err)
 	}
 	reply := c.Reply
 	reply["ok"] = 1
 	docBytes, err := marshalReplyDocs(reply, c.Documents)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling documents")
+		return nil, fmt.Errorf("error marshaling documents: %v", err)
 	}
 
 	resp := append(buf.Bytes(), docBytes...)
@@ -88,11 +88,11 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 		err := buffer.WriteToBuf(buf, resHeader, int32(flags), f.CursorID, int32(startingFrom),
 			int32(1))
 		if err != nil {
-			return nil, fmt.Errorf("error writing prepared response %v\n", err)
+			return nil, fmt.Errorf("error writing prepared response: %v", err)
 		}
 		docBytes, err := marshalReplyDocs(f.QueryFailure, nil)
 		if err != nil {
-			return nil, fmt.Errorf("error marshaling documents")
+			return nil, fmt.Errorf("error marshaling documents: %v", err)
 		}
 		resp := append(buf.Bytes(), docBytes...)
 
@@ -104,11 +104,11 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	err := buffer.WriteToBuf(buf, resHeader, int32(flags), f.CursorID, int32(startingFrom),
 		int32(len(f.Documents)))
 	if err != nil {
-		return nil, fmt.Errorf("error writing prepared response %v\n", err)
+		return nil, fmt.Errorf("error writing prepared response: %v", err)
 	}
 	docBytes, err := marshalReplyDocs(nil, f.Documents)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling documents")
+		return nil, fmt.Errorf("error marshaling documents: %v", err)
 	}
 
 	resp := append(buf.Bytes(), docBytes...)
@@ -154,7 +154,7 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 		err := buffer.WriteToBuf(buf, resHeader, int32(flags), g.CursorID, int32(startingFrom),
 			int32(0))
 		if err != nil {
-			return nil, fmt.Errorf("error writing prepared response %v\n", err)
+			return nil, fmt.Errorf("error writing prepared response: %v", err)
 		}
 
 		resp := setMessageSize(buf.Bytes())
@@ -168,11 +168,11 @@ func (g GetMoreResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	err := buffer.WriteToBuf(buf, resHeader, int32(flags), g.CursorID, int32(startingFrom),
 		int32(len(g.Documents)))
 	if err != nil {
-		return nil, fmt.Errorf("error writing prepared response %v\n", err)
+		return nil, fmt.Errorf("error writing prepared response: %v", err)
 	}
 	docBytes, err := marshalReplyDocs(nil, g.Documents)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling documents")
+		return nil, fmt.Errorf("error marshaling documents: %v", err)
 	}
 
 	resp := append(buf.Bytes(), docBytes...)

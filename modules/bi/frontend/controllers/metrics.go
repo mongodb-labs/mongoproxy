@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, valueField string, start time.Time, end time.Time) ([]bson.M, error) {
+func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, start time.Time, end time.Time) ([]bson.M, error) {
 	// get a query for the data over that range
 
 	// for the time range
@@ -41,11 +41,12 @@ func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, va
 
 	c := db.C(collectionName)
 	query := bson.M{
-		"valueField": valueField,
+		"valueField": rule.ValueField,
 		"start":      bson.M{"$gte": startRange, "$lte": end},
 	}
 
-	iter := c.Find(query).Iter()
+	// make sure the documents are in sorted order.
+	iter := c.Find(query).Sort("-start").Iter()
 
 	var results []bson.M
 

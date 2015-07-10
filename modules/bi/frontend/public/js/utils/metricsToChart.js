@@ -183,7 +183,7 @@ function getMetrics(rules, granularity, index, callback) {
 	var range = 60;
 	startTime.subtract(range, getProperGranularity(granularity));
 
-	Controller.getMetric(index, granularity, rule.ValueField, startTime, endTime,
+	Controller.getMetric(index, granularity, startTime, endTime,
 		function(data) {
 			if (!data) {
 				dataObj = metricsToChart(data, granularity, startTime, range);

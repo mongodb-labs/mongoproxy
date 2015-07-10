@@ -3,7 +3,8 @@ function addLabelsToRules(rules) {
 		return rules;
 	}
 	for (var i = 0; i < rules.length; i++) {
-		rules[i].value = rules[i].ValueField;
+		rules[i].label = rules[i].ValueField;
+		rules[i].value = i;
 	}
 
 	return rules;

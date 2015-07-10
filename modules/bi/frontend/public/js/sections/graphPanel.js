@@ -1,5 +1,6 @@
 var React = require('react');
 var Panel = require('react-bootstrap').Panel;
+var async = require('async');
 
 var GranularityToggle = require('../components/granularityToggle')
 var RuleSelector = require('../components/ruleSelector')
@@ -13,19 +14,31 @@ var GraphPanel = React.createClass({
 		return {
 			timeGranularities: ["M", "D", "h", "m", "s"],
 			data: [],
+			rules: []
 		};
 	},
 	componentDidMount: function() {
 		var self = this;
 
 		setInterval(function() {
-			getMetrics(self.props.rules, "s", 0, function(data) {
-				var graphData = [];
-				graphData[0] = data.time;
-				graphData[1] = data.data;
+			var graphData = [];
+			async.forEachOf(self.state.rules, function(rule, key, callback) {
 
-				graphData[0].unshift('time');
-				graphData[1].unshift('price')
+				getMetrics(self.state.rules, "s", key, function(data) {
+					if (!graphData.length) {
+						graphData[0] = data.time;
+						graphData[0].unshift('time');
+					}
+					gData = data.data;
+
+					// label for the rule
+					gData.unshift(self.state.rules[key].ValueField)
+
+					graphData.push(gData)
+					callback();
+				});
+
+			}, function(err) {
 				self.setState({
 					data: graphData
 				});
@@ -33,10 +46,24 @@ var GraphPanel = React.createClass({
 		}, 1000);
 
 	},
+	handleRuleChange: function(ruleSelector) {
+		var newRules = [];
+		var s = ruleSelector.state.selected;
+
+		for (var i = 0; i < this.props.rules.length; i++) {
+			if (s[i]) {
+				newRules.push(this.props.rules[i]);
+			}
+		}
+
+		this.setState({
+			rules: newRules
+		})
+	},
 	render: function() {
 		return (
 			<Panel>
-			<RuleSelector rules={this.props.rules}/>
+			<RuleSelector onChange={this.handleRuleChange} rules={this.props.rules}/>
 			<GranularityToggle panelID={this.props.panelID} granularities={this.state.timeGranularities}/>
 			<TimeseriesChart data={this.state.data} panelID={this.props.panelID}/>
 		</Panel>

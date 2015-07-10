@@ -14,6 +14,9 @@ var TimeseriesChart = React.createClass({
                 columns: (data || [])
             },
             type: "spline",
+            point: {
+                show: false
+            },
             axis: {
                 x: {
                     type: 'timeseries',

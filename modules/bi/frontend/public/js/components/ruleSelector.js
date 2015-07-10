@@ -1,9 +1,25 @@
 var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
+var _ = require('lodash');
 
 var RuleSelector = React.createClass({
+	getInitialState: function() {
+		return {
+			rules: this.props.rules,
+			selected: {}
+		}
+	},
+	handleChange: function(element, checked) {
+		var newSelectItems = _.extend({}, this.state.selected);
+		newSelectItems[element.val()] = checked;
+		this.setState({selected: newSelectItems})
+		console.log(this.state.selected);
+
+		// bubble to parent
+		this.props.onChange(this);
+	},
 	render: function() {
-		return <Multiselect data={this.props.rules} multiple/>
+		return <Multiselect data={this.props.rules} onChange={this.handleChange} multiple/>
 	}
 })
 

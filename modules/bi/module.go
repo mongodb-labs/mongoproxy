@@ -76,7 +76,7 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 
 			for j := 0; j < len(rule.TimeGranularities); j++ {
 				granularity := rule.TimeGranularities[j]
-				suffix, err := getSuffix(granularity)
+				suffix, err := GetSuffix(granularity)
 				if err != nil {
 					Log(INFO, "%v is not a time granularity", granularity)
 					continue

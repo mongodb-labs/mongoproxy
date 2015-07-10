@@ -53,9 +53,12 @@ func getRangeInGranularities(startTime time.Time, endTime time.Time, granularity
 	switch granularity {
 	case bi.Monthly:
 		// we assume 30 days in a month for now.
-		r = convert.ToInt(rDuration / (time.Duration(24*30) * time.Hour))
+		hours := rDuration / time.Hour
+		days := int(hours) / 24
+		r = days / 30
 	case bi.Daily:
-		r = convert.ToInt(rDuration / (time.Duration(24) * time.Hour))
+		hours := rDuration / time.Hour
+		r = int(hours) / 24
 	case bi.Hourly:
 		r = convert.ToInt(rDuration.Hours())
 	case bi.Minutely:
@@ -250,8 +253,9 @@ func getTabularMetric(c *gin.Context) {
 			cTime, _ := addGranularitiesToTime(inputStartTime, params.Granularity, j)
 
 			index, _ := getRangeInGranularities(params.Start, cTime, params.Granularity)
-			if index >= 0 && index < r {
-				dataArray[index] = val
+			// indexes are going to be off by 1, since we want to be inclusive of the end time.
+			if index > 0 && index <= r {
+				dataArray[index-1] = val
 			}
 		}
 	}

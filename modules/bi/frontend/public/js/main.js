@@ -1,5 +1,6 @@
 window.jQuery = window.$ = require('jquery')
 require('bootstrap/js/button')
+require('./vendor/jquery.timer')
 
 var React = require('react')
 var UniqeIdMixin = require('unique-id-mixin');

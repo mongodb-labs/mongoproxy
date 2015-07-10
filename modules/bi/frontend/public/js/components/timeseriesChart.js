@@ -7,7 +7,6 @@ var TimeseriesChart = React.createClass({
         var self = this;
         console.log(self.props)
         this.chart = c3.generate({
-            bindto: "#" + self.props.panelID,
             data: {
                 x: "time",
                 xFormat: '%Y-%m-%dT%H:%M:%SZ',
@@ -16,6 +15,9 @@ var TimeseriesChart = React.createClass({
             type: "spline",
             point: {
                 show: false
+            },
+            transition: {
+                duration: 100
             },
             axis: {
                 x: {
@@ -29,6 +31,8 @@ var TimeseriesChart = React.createClass({
                 }
             }
         });
+
+        $("#" + self.props.panelID).append(this.chart.element);
     },
 
     componentDidMount: function() {
@@ -36,9 +40,24 @@ var TimeseriesChart = React.createClass({
     },
 
     componentWillReceiveProps: function(newProps) {
-        this.chart.load({
-            columns: newProps.data
-        }); // or whatever API you need
+        if (newProps.unload == true) {
+            console.log("unloading");
+            this.chart.load({
+                columns: newProps.data,
+                unload: true,
+            });
+        }
+        else {
+            this.chart.load({
+                columns: newProps.data
+            });
+        }
+        
+
+    },
+
+    unloadChart: function() {
+        this.chart.unload();
     },
 
     render: function() {

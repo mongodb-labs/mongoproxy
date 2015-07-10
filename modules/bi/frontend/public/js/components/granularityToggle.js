@@ -1,35 +1,50 @@
 var React = require('react')
-
-var ButtonGroup = require('react-bootstrap').ButtonGroup;
-var Button = require('react-bootstrap').Button;
+var Multiselect = require('react-bootstrap-multiselect');
+var _ = require('lodash');
 
 // this.props.granularities - an array of the time granularities
 
 var GranularityToggle = React.createClass({
 	getInitialState: function() {
 		return {
-			buttons: []
+			data: [
+				{
+					value: "M",
+					label: "Month"
+				},
+				{
+					value: "D",
+					label: "Day"
+				},
+				{
+					value: "h",
+					label: "Hour"
+				},
+				{
+					value: "m",
+					label: "Minute",
+					selected: true,
+				},
+				{
+					value: "s",
+					label: "Second"
+				}
+			],
+			selected: "m"
 		};
 	},
-	componentDidMount: function() {
-		var self = this;
-		var b = [];
-		for (var i = 0; i < self.props.granularities.length; i++) {
-			
-			b.push(
-				<label key={this.props.panelID+i} className="btn btn-default">
-                    <input type="radio" name={self.props.granularities[i]} value={i} /> {self.props.granularities[i]}
-                </label> 
-			)
-		}	
-		this.setState({
-			buttons: b
-		})
+
+	handleChange: function(element, checked) {
+		
+		this.setState({selected: element.val()})
+		console.log(this.state.selected);
+
+		// bubble to parent
+		this.props.onChange(this);
 	},
+	
 	render: function() {
-		return <form><ButtonGroup data-toggle="buttons">
-			{this.state.buttons}
-		</ButtonGroup></form>
+		return <Multiselect data={this.state.data} onChange={this.handleChange}/>
 	}
 });
 

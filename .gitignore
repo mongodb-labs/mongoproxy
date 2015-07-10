@@ -4,8 +4,6 @@
 
 bin/
 
-vendor/
-
 .gopath
 .godeps
 

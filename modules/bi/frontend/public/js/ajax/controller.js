@@ -13,7 +13,7 @@ function ISODateString(d) {
 module.exports = {
 
 	getMetric: function(i, timeGranularity, startTime, endTime, cb) {
-		$.ajax('/data/' + i + '/' + timeGranularity + '/' + ISODateString(startTime) + '/' +
+		$.ajax('/tabular/' + i + '/' + timeGranularity + '/' + ISODateString(startTime) + '/' +
 			ISODateString(endTime), {
 				success: cb,
 				error: function() {

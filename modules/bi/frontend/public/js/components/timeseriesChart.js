@@ -10,7 +10,7 @@ var TimeseriesChart = React.createClass({
             bindto: "#" + self.props.panelID,
             data: {
                 x: "time",
-                xFormat: '%Y-%m-%d %H:%M:%S',
+                xFormat: '%Y-%m-%dT%H:%M:%SZ',
                 columns: (data || [])
             },
             type: "spline",
@@ -33,7 +33,6 @@ var TimeseriesChart = React.createClass({
     },
 
     componentWillReceiveProps: function(newProps) {
-        console.log("Received props")
         this.chart.load({
             columns: newProps.data
         }); // or whatever API you need

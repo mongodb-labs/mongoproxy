@@ -21,14 +21,11 @@ var GraphPanel = React.createClass({
 		setInterval(function() {
 			getMetrics(self.props.rules, "s", 0, function(data) {
 				var graphData = [];
-				console.log(data);
 				graphData[0] = data.time;
 				graphData[1] = data.data;
 
 				graphData[0].unshift('time');
-				graphData[1].unshift('price');
-
-				console.log(graphData);
+				graphData[1].unshift('price')
 				self.setState({
 					data: graphData
 				});

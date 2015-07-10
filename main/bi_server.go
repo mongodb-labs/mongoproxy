@@ -34,7 +34,7 @@ func main() {
 
 	t := make([]string, 2)
 	t[0] = bi.Daily
-	t[1] = bi.Minutely
+	t[1] = bi.Secondly
 
 	rule := bi.Rule{
 		OriginDatabase:    "test",

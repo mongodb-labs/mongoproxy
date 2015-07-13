@@ -13,7 +13,11 @@ import (
 	"time"
 )
 
+// biModule is an instance of a BI Module used as reference for the frontend.
 var biModule bi.BIModule
+
+// Temporary code to connect to a MongoDB instance. TODO: use the configuration
+// from the biModule!
 var mongoSession *mgo.Session
 var mongoDBDialInfo = &mgo.DialInfo{
 	// TODO: Allow configurable connection info
@@ -22,11 +26,28 @@ var mongoDBDialInfo = &mgo.DialInfo{
 	Database: "test",
 }
 
+func init() {
+	var err error
+	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
+	if err != nil {
+		Log(ERROR, "%#v\n", err)
+		return
+	}
+}
+
+// metricParam contains the parameters from the URL GET request for metrics.
 type metricParam struct {
-	RuleIndex   int64
+	// the index for the rule that is referenced by the GET request
+	RuleIndex int64
+
+	// the time granularity of the request
 	Granularity string
-	Start       time.Time
-	End         time.Time
+
+	// the start time queried for in the request
+	Start time.Time
+
+	// the end time queried for in the request
+	End time.Time
 }
 
 func getGranularityField(granularity string) (string, error) {
@@ -89,6 +110,8 @@ func addGranularitiesToTime(t time.Time, granularity string, n int) (time.Time, 
 	}
 }
 
+// parseMetricParams is a helper function to store the URL parameters from a
+// request into a metricParam struct.
 func parseMetricParams(c *gin.Context) (*metricParam, error) {
 	ruleIndex, err := strconv.ParseInt(c.Param("ruleIndex"), 10, 64)
 	if err != nil {
@@ -117,15 +140,7 @@ func parseMetricParams(c *gin.Context) (*metricParam, error) {
 	}, nil
 }
 
-func init() {
-	var err error
-	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
-	if err != nil {
-		Log(ERROR, "%#v\n", err)
-		return
-	}
-}
-
+// getMain is the handler for the main HTML page, and serves up the default view.
 func getMain(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
@@ -133,6 +148,8 @@ func getMain(c *gin.Context) {
 	})
 }
 
+// getMetric is the handler for retrieving data in the form of documents, as they
+// are stored in the MongoDB database.
 func getMetric(c *gin.Context) {
 	params, err := parseMetricParams(c)
 
@@ -154,6 +171,7 @@ func getMetric(c *gin.Context) {
 	c.JSON(200, docs)
 }
 
+// getTabularMetric is the handler for retrieving tabular data.
 func getTabularMetric(c *gin.Context) {
 	params, err := parseMetricParams(c)
 
@@ -267,6 +285,9 @@ func getTabularMetric(c *gin.Context) {
 
 }
 
+// Setup sets up the routes for the frontend server, taking in an Engine
+// and a BI Module for initialization, and returns the same Engine with the
+// routes added for chaining purposes.
 func Setup(r *gin.Engine, source bi.BIModule) *gin.Engine {
 	biModule = source
 

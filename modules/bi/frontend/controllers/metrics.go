@@ -1,45 +1,30 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
 )
 
+// getDataOverRange is a helper function that queries the MongoDB database for metric documents matching
+// the given rule and granularity between the start and end times.
 func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, start time.Time, end time.Time) ([]bson.M, error) {
-	// get a query for the data over that range
 
-	// for the time range
-	// the first time should be start rounded down
-	// the second time should be end
 	db := session.DB(rule.PrefixDatabase)
 
-	var startRange time.Time
-	collectionName := rule.PrefixCollection
-
-	switch granularity {
-	case bi.Monthly:
-		startRange = time.Date(start.Year(), time.January, 1, 0, 0, 0, 0, start.Location())
-		collectionName += "-month"
-	case bi.Daily:
-		startRange = time.Date(start.Year(), start.Month(), 1, 0, 0, 0, 0, start.Location())
-		collectionName += "-day"
-	case bi.Hourly:
-		startRange = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
-		collectionName += "-hour"
-	case bi.Minutely:
-		startRange = time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), 0, 0, 0, start.Location())
-		collectionName += "-minute"
-	case bi.Secondly:
-		startRange = time.Date(start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute(), 0, 0, start.Location())
-		collectionName += "-second"
-	default:
-		return nil, fmt.Errorf("%v is not a valid time granularity", granularity)
+	startRange, err := bi.GetRoundedTime(start, granularity)
+	if err != nil {
+		return nil, err
 	}
 
+	collectionSuffix, err := bi.GetSuffix(granularity)
+	if err != nil {
+		return nil, err
+	}
+	collectionName := rule.PrefixCollection + collectionSuffix
 	c := db.C(collectionName)
+
 	query := bson.M{
 		"valueField": rule.ValueField,
 		"start":      bson.M{"$gte": startRange, "$lte": end},
@@ -50,8 +35,7 @@ func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, st
 
 	var results []bson.M
 
-	err := iter.All(&results)
-
+	err = iter.All(&results)
 	if err != nil {
 		return nil, err
 	}

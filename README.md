@@ -21,3 +21,19 @@ To run integration tests:
 
 	node tests/test <js file to test>
 	node tests/test_dir <directory of files to test>
+
+## BI Module Frontend
+
+All operations assume that you are in the `modules/bi/frontend` directory, relative to the base path of the project. 
+	
+	cd modules/bi/frontend # from project directory
+
+The frontend requires `node` and `npm` to be installed.
+
+To grab dependencies:
+
+	npm install
+
+To run (requires mongod to be running on localhost:27017):
+
+	npm start

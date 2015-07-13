@@ -1,14 +1,10 @@
-// Should try to develop here...
 var _ = require('lodash');
 var moment = require('moment');
 
-var Controller = require('../ajax/controller')
+var Controller = require('../ajax/controller');
+var g = require('./granularities');
 
-var timeFormat = "YYYY-MM-DD HH:mm:ss";
-
-var g = require('./granularities')
-
-function getMetrics(rules, granularity, index, callback) {
+function getCurrentMetric(rules, granularity, index, callback, error) {
 	var endTime = moment();
 	var startTime = moment();
 	var rule = rules[index];
@@ -17,11 +13,11 @@ function getMetrics(rules, granularity, index, callback) {
 	var range = 60;
 	startTime.subtract(range, g.getProperGranularity(granularity));
 
-	Controller.getMetric(index, granularity, startTime, endTime,
+	Controller.getTabularMetric(index, granularity, startTime, endTime,
 		function(data) {
 			callback(data);
-		});
+		}, error);
 
 }
 
-module.exports = getMetrics;
+module.exports = getCurrentMetric;

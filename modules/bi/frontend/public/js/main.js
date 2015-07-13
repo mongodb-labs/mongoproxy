@@ -1,15 +1,17 @@
-window.jQuery = window.$ = require('jquery')
-require('bootstrap/js/button')
-require('./vendor/jquery.timer')
+window.jQuery = window.$ = require('jquery');
+require('bootstrap/js/button');
+require('./vendor/jquery.timer');
 
-var React = require('react')
+var React = require('react');
 var UniqeIdMixin = require('unique-id-mixin');
 
-var GraphPanel = require('./sections/graphPanel')
+var GraphPanel = require('./sections/graphPanel');
 
+// add extra fields to the rules
 var addLabelToRules = require('./utils/addLabelToRules');
 addLabelToRules(window.config.Rules);
 
+// initialize the application
 var App = React.createClass({
 	mixins: [ UniqeIdMixin ],
 	render: function() {

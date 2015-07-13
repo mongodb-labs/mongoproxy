@@ -8,13 +8,18 @@ import (
 	"html/template"
 )
 
+// the funcMap adds helper functions that can be injected into the HTML
+// templates
 var funcMap = template.FuncMap{
+	// marshal converts an interface{} into a JSON object that can be consumed
+	// by the browser.
 	"marshal": func(v interface{}) template.JS {
 		a, _ := json.Marshal(v)
 		return template.JS(a)
 	},
 }
 
+// Start initializes a new server for the BI Module Frontend.
 func Start(module bi.BIModule) *gin.Engine {
 	r := gin.New()
 
@@ -33,6 +38,7 @@ func Start(module bi.BIModule) *gin.Engine {
 	return r
 }
 
+// TODO: put in different file so that server.go can go into the 'frontend' package
 func main() {
 	// initialize BI module
 	// TODO: load from a config, rather than hardcoding

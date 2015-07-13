@@ -6,18 +6,23 @@ var GranularityToggle = require('../components/granularityToggle')
 var RuleSelector = require('../components/ruleSelector')
 var TimeseriesChart = require('../components/timeseriesChart')
 
-var getMetrics = require('../utils/metricsToChart')
+var getCurrentMetric = require('../utils/getCurrentMetric')
 
 var clearChartTimeout;
 var chartInterval;
 
+// setChart is a helper function to asynchronously update a chart, called whenever
+// new data should be pushed from the server.
+// graphPanel is the GraphPanel instance to update, and unload is a boolean that
+// determines whether the chart should be cleared beforehand (e.g. if datasets change)
 function setChart(graphPanel, unload) {
 	var graphData = [];
 	async.forEachOf(graphPanel.state.rules, function(rule, key, callback) {
 
 		i = rule.index || key;
-		getMetrics(graphPanel.props.rules, graphPanel.state.granularity, i, function(data) {
+		getCurrentMetric(graphPanel.props.rules, graphPanel.state.granularity, i, function(data) {
 
+			// label for the time axis
 			if (!graphData.length) {
 				graphData[0] = data.time;
 				graphData[0].unshift('time');
@@ -29,13 +34,17 @@ function setChart(graphPanel, unload) {
 
 			graphData.push(gData)
 			callback();
+		}, function(error) {
+			callback(error);
 		});
 
 	}, function(err) {
-		graphPanel.setState({
-			data: graphData,
-			unload: unload,
-		});
+		if (!err) {
+			graphPanel.setState({
+				data: graphData,
+				unload: unload,
+			});
+		}
 	});
 }
 
@@ -45,8 +54,9 @@ var GraphPanel = React.createClass({
 		return {
 			granularity: "m",
 			data: [],
-			rules: [],
-			unload: false,
+			// state.rules change depending on what rules are visible in this graph,
+			// props.rules are static and always have the full rule list
+			rules: []
 		};
 	},
 	componentDidMount: function() {
@@ -83,7 +93,6 @@ var GraphPanel = React.createClass({
 		for (var i = 0; i < this.props.rules.length; i++) {
 			if (s[i]) {
 				var rule = this.props.rules[i];
-				rule.index = i;
 				newRules.push(rule);
 			}
 		}
@@ -102,10 +111,10 @@ var GraphPanel = React.createClass({
 	render: function() {
 		return (
 			<Panel>
-			<RuleSelector onChange={this.handleRuleChange} rules={this.props.rules}/>
-			<GranularityToggle onChange={this.handleGranularityToggle} panelID={this.props.panelID} ref="timeToggle" granularities={this.state.timeGranularities}/>
-			<TimeseriesChart unload={this.state.unload} ref="chart" data={this.state.data} panelID={this.props.panelID}/>
-		</Panel>
+				<RuleSelector onChange={this.handleRuleChange} rules={this.props.rules}/>
+				<GranularityToggle onChange={this.handleGranularityToggle} panelID={this.props.panelID} ref="timeToggle" granularities={this.state.timeGranularities}/>
+				<TimeseriesChart unload={this.state.unload} ref="chart" data={this.state.data} panelID={this.props.panelID}/>
+			</Panel>
 		)
 	}
 })

@@ -9,7 +9,7 @@ var TimeseriesChart = React.createClass({
         this.chart = c3.generate({
             data: {
                 x: "time",
-                xFormat: '%Y-%m-%dT%H:%M:%SZ',
+                xFormat: '%Y-%m-%dT%H:%M:%S.%LZ',
                 columns: (data || [])
             },
             type: "spline",
@@ -23,7 +23,6 @@ var TimeseriesChart = React.createClass({
                 x: {
                     type: 'timeseries',
                     tick: {
-                        //              format : "%m/%d" // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
                         format: "%Y-%m-%d %H:%M:%S", // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
                         count: 5,
                     },

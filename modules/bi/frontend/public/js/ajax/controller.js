@@ -1,24 +1,18 @@
-function ISODateString(d) {
-	if (d.toDate) {
-		d = d.toDate();
-	}
-
-	function pad(n) {
-		return n < 10 ? '0' + n : n
-	}
-	return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + 'T' + pad(
-		d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds()) + 'Z';
-}
-
 module.exports = {
 
-	getMetric: function(i, timeGranularity, startTime, endTime, cb) {
-		$.ajax('/tabular/' + i + '/' + timeGranularity + '/' + ISODateString(startTime) + '/' +
-			ISODateString(endTime), {
-				success: cb,
-				error: function() {
-					// bad things happen here
-				}
+	// AJAX request for a metric with the rule at index i, the given time granularity,
+	// the time of the beginning of the data, and the time of the end of the data.
+	// The callback is called on success, and error is called on error.
+	getTabularMetric: function(i, timeGranularity, startTime, endTime, callback, error) {
+		
+		// TODO: Find a better way to reference rules rather than with index. Currently, rules
+		// do not have a unique ID, so the easiest way to get the unique identifier is with their
+		// position in the array.
+		
+		$.ajax('/tabular/' + i + '/' + timeGranularity + '/' + startTime.toISOString() + '/' +
+			endTime.toISOString(), {
+				success: callback,
+				error: error
 			})
 	}
 

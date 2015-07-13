@@ -2,8 +2,6 @@ var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
 var _ = require('lodash');
 
-// this.props.granularities - an array of the time granularities
-
 var GranularityToggle = React.createClass({
 	getInitialState: function() {
 		return {

@@ -102,7 +102,7 @@ func TestCreateUpdate(t *testing.T) {
 			t1 := time.Date(2015, time.March, 20, 14, 35, 2, 144, time.UTC)
 			value := 20
 			valueFloat := convert.ToFloat64(value)
-			expected := bson.D{{"$inc", bson.D{{"total", 20}}}, {"$inc", bson.D{{"month.3", 20}}}}
+			expected := bson.D{{"$inc", bson.D{{"total", valueFloat}}}, {"$inc", bson.D{{"month.3", valueFloat}}}}
 
 			actual, err := createUpdate(t1, Monthly, valueFloat)
 
@@ -114,7 +114,7 @@ func TestCreateUpdate(t *testing.T) {
 			t1 := time.Date(2015, time.March, 20, 14, 35, 2, 144, time.UTC)
 			value := 20
 			valueFloat := convert.ToFloat64(value)
-			expected := bson.D{{"$inc", bson.D{{"total", 20}}}, {"$inc", bson.D{{"day.20", 20}}}}
+			expected := bson.D{{"$inc", bson.D{{"total", valueFloat}}}, {"$inc", bson.D{{"day.20", valueFloat}}}}
 
 			actual, err := createUpdate(t1, Daily, valueFloat)
 
@@ -126,7 +126,7 @@ func TestCreateUpdate(t *testing.T) {
 			t1 := time.Date(2015, time.March, 20, 14, 35, 2, 144, time.UTC)
 			value := 20
 			valueFloat := convert.ToFloat64(value)
-			expected := bson.D{{"$inc", bson.D{{"total", 20}}}, {"$inc", bson.D{{"hour.14", 20}}}}
+			expected := bson.D{{"$inc", bson.D{{"total", valueFloat}}}, {"$inc", bson.D{{"hour.14", valueFloat}}}}
 
 			actual, err := createUpdate(t1, Hourly, valueFloat)
 
@@ -138,7 +138,7 @@ func TestCreateUpdate(t *testing.T) {
 			t1 := time.Date(2015, time.March, 20, 14, 35, 2, 144, time.UTC)
 			value := 20
 			valueFloat := convert.ToFloat64(value)
-			expected := bson.D{{"$inc", bson.D{{"total", 20}}}, {"$inc", bson.D{{"minute.35", 20}}}}
+			expected := bson.D{{"$inc", bson.D{{"total", valueFloat}}}, {"$inc", bson.D{{"minute.35", valueFloat}}}}
 
 			actual, err := createUpdate(t1, Minutely, valueFloat)
 
@@ -150,13 +150,14 @@ func TestCreateUpdate(t *testing.T) {
 			t1 := time.Date(2015, time.March, 20, 14, 35, 2, 144, time.UTC)
 			value := 20
 			valueFloat := convert.ToFloat64(value)
-			expected := bson.D{{"$inc", bson.D{{"total", 20}}}, {"$inc", bson.D{{"second.2", 20}}}}
+			expected := bson.D{{"$inc", bson.D{{"total", valueFloat}}}, {"$inc", bson.D{{"second.2", valueFloat}}}}
 
 			actual, err := createUpdate(t1, Secondly, valueFloat)
 
 			So(actual, ShouldResemble, expected)
 			So(err, ShouldBeNil)
 		})
+
 	})
 
 	Convey("Fail to create an update", t, func() {

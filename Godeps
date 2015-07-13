@@ -1,3 +1,3 @@
-gopkg.in/mgo.v2	c6a7dce14133ccac2dcac3793f1d6e2ef048503a
+gopkg.in/mgo.v2	0e631fbd094d2e11c3fbc83aaf1dfaadd20d34a1	github.com/dmliao/mgo
 github.com/smartystreets/goconvey/convey	eb2e83c1df892d2c9ad5a3c85672da30be585dfd
 github.com/op/go-logging	e8d5414f0947014548c2334044a0fac13187dfee

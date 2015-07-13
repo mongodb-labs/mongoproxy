@@ -4,6 +4,7 @@
 package mongod
 
 import (
+	"fmt"
 	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
@@ -17,33 +18,97 @@ import (
 // A MongodModule takes the request, sends it to a mongod instance, and then
 // writes the response from mongod into the ResponseWriter before calling
 // the next module. It passes on requests unchanged.
-type MongodModule struct{}
-
-// Temporary code to set up a connection with mongod. Should eventually be replaced
-// by a module-wide configuration.
-var mongoSession *mgo.Session
-var mongoDBDialInfo = &mgo.DialInfo{
-	// TODO: Allow configurable connection info
-	Addrs:    []string{"localhost:27017"},
-	Timeout:  60 * time.Second,
-	Database: "test",
+type MongodModule struct {
+	Connection mgo.DialInfo
 }
 
-// TODO: have a specific function for configuring modules.
+var mongoSession *mgo.Session
+
 func init() {
-	var err error
-	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
-	if err != nil {
-		Log(ERROR, "%#v\n", err)
-		return
+
+}
+
+func (m MongodModule) Name() string {
+	return "mongod"
+}
+
+/*
+Configuration structure:
+{
+	addresses: []string,
+	direct: boolean,
+	timeout: integer,
+	auth: {
+		username: string,
+		password: string,
+		database: string
+	}
+}
+*/
+func (m MongodModule) Configure(conf bson.M) error {
+	addrs, ok := conf["addresses"].([]string)
+	if !ok {
+		// check if it's a slice of interfaces
+		addrsRaw, ok := conf["addresses"].([]interface{})
+		if !ok {
+			return fmt.Errorf("Invalid addresses: not a slice")
+		}
+		addrs = make([]string, len(addrsRaw))
+		for i := 0; i < len(addrsRaw); i++ {
+			a, ok := addrsRaw[i].(string)
+			if !ok {
+				return fmt.Errorf("Invalid addresses: address is not a string")
+			}
+			addrs[i] = a
+		}
 	}
 
-	// don't fetch new documents unless the client sends a getMore request
-	mongoSession.SetPrefetch(0)
+	timeout := time.Duration(convert.ToInt64(conf["timeout"], -1))
+	if timeout == -1 {
+		timeout = time.Second * 10
+	}
+
+	dialInfo := mgo.DialInfo{
+		Addrs:   addrs,
+		Direct:  convert.ToBool(conf["direct"]),
+		Timeout: timeout,
+	}
+
+	auth := convert.ToBSONMap(conf["auth"])
+	if auth != nil {
+		username, ok := auth["username"].(string)
+		if ok {
+			dialInfo.Username = username
+		}
+		password, ok := auth["password"].(string)
+		if ok {
+			dialInfo.Password = password
+		}
+		database, ok := auth["database"].(string)
+		if ok {
+			dialInfo.Database = database
+		}
+
+	}
+
+	m.Connection = dialInfo
+	return nil
 }
 
 func (m MongodModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
+
+	// spin up the session if it doesn't exist
+	if mongoSession == nil {
+		var err error
+		mongoSession, err = mgo.DialWithInfo(&m.Connection)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			next(req, res)
+			return
+		}
+		mongoSession.SetPrefetch(0)
+	}
 
 	switch req.Type() {
 	case messages.CommandType:

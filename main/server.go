@@ -6,6 +6,7 @@ import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/modules/mockule"
 	"github.com/mongodbinc-interns/mongoproxy/server"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -30,8 +31,7 @@ func main() {
 
 	// initialize the pipeline
 	chain := server.CreateChain()
-	chain.AddModules(mockule)
-	pipeline := server.BuildPipeline(chain)
+	chain.AddModule(mockule)
 
-	mongoproxy.Start(port, pipeline)
+	mongoproxy.Start(port, chain)
 }

@@ -27,10 +27,10 @@ func splitCommandOpQuery(q bson.D) (string, bson.M) {
 	return commandName, args
 }
 
-// parseNamespace splits a namespace string into the database and collection.
+// ParseNamespace splits a namespace string into the database and collection.
 // The first return value is the database, the second, the collection. An error
 // is returned if either the database or the collection doesn't exist.
-func parseNamespace(namespace string) (string, string, error) {
+func ParseNamespace(namespace string) (string, string, error) {
 	index := strings.Index(namespace, ".")
 	if index < 0 || index >= len(namespace) {
 		return "", "", fmt.Errorf("not a namespace")
@@ -266,7 +266,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
-	database, collection, err := parseNamespace(namespace)
+	database, collection, err := ParseNamespace(namespace)
 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing namespace: %v", err)
@@ -408,7 +408,7 @@ func processOpUpdate(reader io.Reader, header MsgHeader) (Requester, error) {
 		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
-	database, collection, err := parseNamespace(namespace)
+	database, collection, err := ParseNamespace(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
@@ -465,7 +465,7 @@ func processOpInsert(reader io.Reader, header MsgHeader) (Requester, error) {
 		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
-	database, collection, err := parseNamespace(namespace)
+	database, collection, err := ParseNamespace(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
@@ -509,7 +509,7 @@ func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
 		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
-	database, collection, err := parseNamespace(namespace)
+	database, collection, err := ParseNamespace(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}
@@ -550,7 +550,7 @@ func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 		return nil, fmt.Errorf("error reading null terminated string: %v", err)
 	}
 
-	database, collection, err := parseNamespace(namespace)
+	database, collection, err := ParseNamespace(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing namespace: %v", err)
 	}

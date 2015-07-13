@@ -23,6 +23,14 @@ var database = make(map[string][]bson.D)
 type Mockule struct {
 }
 
+func (m Mockule) Name() string {
+	return "mockule"
+}
+
+func (m Mockule) Configure(bson.M) error {
+	return nil
+}
+
 func (m Mockule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 

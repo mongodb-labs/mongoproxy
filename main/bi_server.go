@@ -7,6 +7,7 @@ import (
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"github.com/mongodbinc-interns/mongoproxy/modules/mockule"
 	"github.com/mongodbinc-interns/mongoproxy/server"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -32,26 +33,25 @@ func main() {
 	// initialize BI module
 	biModule := bi.BIModule{}
 
-	t := make([]string, 2)
-	t[0] = bi.Daily
-	t[1] = bi.Secondly
-
-	rule := bi.Rule{
-		OriginDatabase:    "test",
-		OriginCollection:  "foo",
-		PrefixDatabase:    "db",
-		PrefixCollection:  "metrics",
-		TimeGranularities: t,
-		ValueField:        "price",
+	ruleBSON := bson.M{
+		"origin":          "test.foo",
+		"prefix":          "db.metrics",
+		"timeGranularity": []string{bi.Daily, bi.Secondly},
+		"valueField":      "price",
 	}
-	biModule.Rules = append(biModule.Rules, rule)
+
+	var biConfig = bson.M{}
+	connection := bson.M{}
+	connection["addresses"] = []string{"localhost:27017"}
+	biConfig["connection"] = connection
+	biConfig["rules"] = []bson.M{ruleBSON}
 
 	// initialize the pipeline
 	chain := server.CreateChain()
 
-	chain.AddModules(biModule, mockule)
+	chain.AddModule(biModule)
+	biModule.Configure(biConfig)
+	chain.AddModule(mockule)
 
-	pipeline := server.BuildPipeline(chain)
-
-	mongoproxy.Start(port, pipeline)
+	mongoproxy.Start(port, chain)
 }

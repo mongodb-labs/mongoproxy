@@ -40,6 +40,14 @@ func (f *MockRes) Error(code int32, message string) {
 type ModuleOne struct {
 }
 
+func (m ModuleOne) Name() string {
+	return "one"
+}
+
+func (m ModuleOne) Configure(bson.M) error {
+	return nil
+}
+
 func (m ModuleOne) Process(req messages.Requester, res messages.Responder, next PipelineFunc) {
 	r := messages.CommandResponse{}
 	r.Reply = msgOne
@@ -48,6 +56,14 @@ func (m ModuleOne) Process(req messages.Requester, res messages.Responder, next 
 }
 
 type ModuleTwo struct {
+}
+
+func (m ModuleTwo) Name() string {
+	return "two"
+}
+
+func (m ModuleTwo) Configure(bson.M) error {
+	return nil
 }
 
 func (m ModuleTwo) Process(req messages.Requester, res messages.Responder, next PipelineFunc) {
@@ -77,7 +93,7 @@ func TestModuleChaining(t *testing.T) {
 
 			m1 := ModuleOne{}
 			chain := CreateChain()
-			chain.AddModules(m1)
+			chain.AddModule(m1)
 			r := MockReq{}
 			w := &MockRes{
 				Data: make([]bson.M, 0),
@@ -93,24 +109,8 @@ func TestModuleChaining(t *testing.T) {
 				m1 := ModuleOne{}
 				m2 := ModuleTwo{}
 				chain := CreateChain()
-				chain.AddModules(m2)
-				chain.AddModules(m1)
-				r := MockReq{}
-				w := &MockRes{
-					Data: make([]bson.M, 0),
-				}
-				pipeline := BuildPipeline(chain)
-				pipeline(r, w)
-
-				So(w.Data[0], ShouldEqual, msgOne)
-				So(w.Data[1], ShouldEqual, msgTwo)
-			})
-
-			Convey("in the correct order, as one function call", func() {
-				m1 := ModuleOne{}
-				m2 := ModuleTwo{}
-				chain := CreateChain()
-				chain.AddModules(m2, m1)
+				chain.AddModule(m2)
+				chain.AddModule(m1)
 				r := MockReq{}
 				w := &MockRes{
 					Data: make([]bson.M, 0),

@@ -15,15 +15,12 @@ type ChainFunc func(PipelineFunc) PipelineFunc
 // A ModuleChain consists of a chain of wrapped modules that can be built
 // into a single pipeline function.
 type ModuleChain struct {
-	chain []ChainFunc
+	chain []Module
 }
 
-// AddModules adds the module mods to the end of a given module chain.
-func (m *ModuleChain) AddModules(mods ...Module) *ModuleChain {
-	for i := 0; i < len(mods); i++ {
-		m.chain = append(m.chain, wrapModule(mods[i]))
-	}
-
+// AddModule adds the module mod to the end of a given module chain.
+func (m *ModuleChain) AddModule(mod Module) *ModuleChain {
+	m.chain = append(m.chain, mod)
 	return m
 }
 
@@ -48,9 +45,7 @@ func wrapModule(m Module) ChainFunc {
 // CreateChain initializes and returns an empty module chain that can be used
 // to build a pipeline
 func CreateChain() *ModuleChain {
-	return &ModuleChain{
-		chain: make([]ChainFunc, 0),
-	}
+	return &ModuleChain{}
 }
 
 // BuildPipeline takes a module chain and creates a pipeline, returning
@@ -65,9 +60,9 @@ func BuildPipeline(m *ModuleChain) PipelineFunc {
 			return
 		})
 	}
-	pipeline := m.chain[len(m.chain)-1](nil)
+	pipeline := wrapModule(m.chain[len(m.chain)-1])(nil)
 	for i := len(m.chain) - 2; i >= 0; i-- {
-		pipeline = m.chain[i](pipeline)
+		pipeline = wrapModule(m.chain[i])(pipeline)
 	}
 
 	return pipeline

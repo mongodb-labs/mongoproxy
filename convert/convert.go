@@ -280,3 +280,26 @@ func ConvertToBSONDocSlice(input interface{}) ([]bson.D, error) {
 
 	return nil, fmt.Errorf("Unsupported input for bson.D slice: %#v\n", input)
 }
+
+func ConvertToStringSlice(input interface{}) ([]string, error) {
+	inputStrings, ok := input.([]string)
+	if ok {
+		return inputStrings, nil
+	}
+
+	inputInterface, ok := input.([]interface{})
+	if ok {
+		d := make([]string, len(inputInterface))
+		for i := 0; i < len(inputInterface); i++ {
+			raw := inputInterface[i]
+			rawString, ok2 := raw.(string)
+			if !ok2 {
+				return nil, fmt.Errorf("Slice contents aren't strings")
+			}
+			d[i] = rawString
+		}
+		return d, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported input for a string slice: %#v\n", input)
+}

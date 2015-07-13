@@ -9,13 +9,15 @@ import (
 	"net"
 )
 
-func Start(port int, pipeline server.PipelineFunc) {
+func Start(port int, chain *server.ModuleChain) {
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
 		Log(ERROR, "Error listening on port %v: %v\n", port, err)
 		return
 	}
+
+	pipeline := server.BuildPipeline(chain)
 
 	for {
 		conn, err := ln.Accept()

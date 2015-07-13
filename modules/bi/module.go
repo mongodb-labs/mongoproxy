@@ -3,6 +3,8 @@
 package bi
 
 import (
+	"fmt"
+	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/server"
@@ -15,29 +17,134 @@ import (
 // data from inserts that successfully traveled the pipeline. The requests it analyzes
 // and the metrics it aggregates is based upon its rules.
 type BIModule struct {
-	Rules []Rule
+	Rules      []Rule
+	Connection mgo.DialInfo
 }
 
-// Temporary code to set up a connection with mongod. Should eventually be replaced
-// by user-set configuration.
 var mongoSession *mgo.Session
-var mongoDBDialInfo = &mgo.DialInfo{
-	// TODO: Allow configurable connection info
-	Addrs:    []string{"localhost:27017"},
-	Timeout:  60 * time.Second,
-	Database: "test",
-}
 
 // TODO: have a specific function for configuring modules.
 func init() {
-	var err error
-	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
+
+}
+
+func (b BIModule) Name() string {
+	return "bi"
+}
+
+/*
+Configuration structure:
+{
+	connection: {
+		addresses: []string,
+		direct: boolean,
+		timeout: integer,
+		auth: {
+			username: string,
+			password: string,
+			database: string
+		}
+	}
+	rules: [
+		{
+			origin: string,
+			prefix: string,
+			timeGranularity: []string,
+			valueField: string,
+			timeField: string
+		}
+	]
+}
+*/
+func (b BIModule) Configure(conf bson.M) error {
+	conn := convert.ToBSONMap(conf["connection"])
+	if conn == nil {
+		return fmt.Errorf("No connection data")
+	}
+	addrs, err := convert.ConvertToStringSlice(conn["addresses"])
 	if err != nil {
-		Log(ERROR, "%#v\n", err)
-		return
+		return fmt.Errorf("Invalid addresses: %v", err)
 	}
 
-	mongoSession.SetPrefetch(0)
+	timeout := time.Duration(convert.ToInt64(conn["timeout"], -1))
+	if timeout == -1 {
+		timeout = time.Second * 10
+	}
+
+	dialInfo := mgo.DialInfo{
+		Addrs:   addrs,
+		Direct:  convert.ToBool(conn["direct"]),
+		Timeout: timeout,
+	}
+
+	auth := convert.ToBSONMap(conn["auth"])
+	if auth != nil {
+		username, ok := auth["username"].(string)
+		if ok {
+			dialInfo.Username = username
+		}
+		password, ok := auth["password"].(string)
+		if ok {
+			dialInfo.Password = password
+		}
+		database, ok := auth["database"].(string)
+		if ok {
+			dialInfo.Database = database
+		}
+	}
+
+	b.Connection = dialInfo
+
+	// Rules
+	b.Rules = make([]Rule, 0)
+	rules, err := convert.ConvertToBSONMapSlice(conf["rules"])
+	if err != nil {
+		return fmt.Errorf("Error parsing rules: %v", err)
+	}
+
+	for i := 0; i < len(rules); i++ {
+		r := rules[i]
+		originD, originC, err := messages.ParseNamespace(convert.ToString(r["origin"]))
+		if err != nil {
+			return fmt.Errorf("Error parsing origin namespace: %v", err)
+		}
+		prefixD, prefixC, err := messages.ParseNamespace(convert.ToString(r["prefix"]))
+		if err != nil {
+			return fmt.Errorf("Error parsing prefix namespace: %v", err)
+		}
+		timeGranularities, err := convert.ConvertToStringSlice(r["timeGranularity"])
+		if err != nil {
+			return fmt.Errorf("Error parsing time granularities: %v", err)
+		}
+		valueField, ok := r["valueField"].(string)
+		if !ok {
+			return fmt.Errorf("Invalid valueField.")
+		}
+		rule := Rule{
+			OriginDatabase:    originD,
+			OriginCollection:  originC,
+			PrefixDatabase:    prefixD,
+			PrefixCollection:  prefixC,
+			TimeGranularities: timeGranularities,
+			ValueField:        valueField,
+		}
+		timeField, ok := r["timeField"].(time.Time)
+		if ok {
+			rule.TimeField = &timeField
+		} else {
+			timeFieldRaw, ok := r["timeField"].(string)
+			if ok {
+				err := timeField.UnmarshalText([]byte(timeFieldRaw))
+				if err != nil {
+					rule.TimeField = &timeField
+				}
+			}
+		}
+
+		b.Rules = append(b.Rules, rule)
+	}
+
+	return nil
 }
 
 func (b BIModule) Process(req messages.Requester, res messages.Responder,
@@ -49,6 +156,17 @@ func (b BIModule) Process(req messages.Requester, res messages.Responder,
 
 	if resNext.CommandError != nil {
 		return // we're done. An error occured, so we shouldn't do any aggregating
+	}
+
+	// spin up the session if it doesn't exist
+	if mongoSession == nil {
+		var err error
+		mongoSession, err = mgo.DialWithInfo(&b.Connection)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			return
+		}
+		mongoSession.SetPrefetch(0)
 	}
 
 	updates := make([]messages.Update, 0)

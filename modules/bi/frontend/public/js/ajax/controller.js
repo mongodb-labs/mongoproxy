@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
 
 	// AJAX request for a metric with the rule at index i, the given time granularity,

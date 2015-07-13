@@ -1,3 +1,5 @@
+'use strict';
+
 var React = require('react');
 var Panel = require('react-bootstrap').Panel;
 var async = require('async');
@@ -19,7 +21,8 @@ function setChart(graphPanel, unload) {
 	var graphData = [];
 	async.forEachOf(graphPanel.state.rules, function(rule, key, callback) {
 
-		i = rule.index || key;
+		var i = rule.index || key;
+		var label = rule.label;
 		getCurrentMetric(graphPanel.props.rules, graphPanel.state.granularity, i, function(data) {
 
 			// label for the time axis
@@ -27,10 +30,10 @@ function setChart(graphPanel, unload) {
 				graphData[0] = data.time;
 				graphData[0].unshift('time');
 			}
-			gData = data.data;
+			var gData = data.data;
 
 			// label for the rule
-			gData.unshift(graphPanel.props.rules[key].ValueField)
+			gData.unshift(label)
 
 			graphData.push(gData)
 			callback();
@@ -113,7 +116,7 @@ var GraphPanel = React.createClass({
 			<Panel>
 				<RuleSelector onChange={this.handleRuleChange} rules={this.props.rules}/>
 				<GranularityToggle onChange={this.handleGranularityToggle} panelID={this.props.panelID} ref="timeToggle" granularities={this.state.timeGranularities}/>
-				<TimeseriesChart unload={this.state.unload} ref="chart" data={this.state.data} panelID={this.props.panelID}/>
+				<TimeseriesChart ref="chart" data={this.state.data} panelID={this.props.panelID}/>
 			</Panel>
 		)
 	}

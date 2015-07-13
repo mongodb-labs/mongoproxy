@@ -1,3 +1,5 @@
+'use strict';
+
 var React = require('react')
 var c3 = require("c3");
 
@@ -5,7 +7,6 @@ var TimeseriesChart = React.createClass({
     _renderChart: function(data) {
         // save reference to our chart to the instance
         var self = this;
-        console.log(self.props)
         this.chart = c3.generate({
             data: {
                 x: "time",
@@ -40,7 +41,6 @@ var TimeseriesChart = React.createClass({
 
     componentWillReceiveProps: function(newProps) {
         if (newProps.unload == true) {
-            console.log("unloading");
             this.chart.load({
                 columns: newProps.data,
                 unload: true,

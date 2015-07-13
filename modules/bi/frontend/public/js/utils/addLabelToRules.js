@@ -1,3 +1,5 @@
+'use strict';
+
 function addLabelsToRules(rules) {
 	if (!rules || !rules.length) {
 		return rules;

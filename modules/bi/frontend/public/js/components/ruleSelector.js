@@ -1,3 +1,5 @@
+'use strict';
+
 var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
 var _ = require('lodash');
@@ -13,8 +15,7 @@ var RuleSelector = React.createClass({
 		var newSelectItems = _.extend({}, this.state.selected);
 		newSelectItems[element.val()] = checked;
 		this.setState({selected: newSelectItems})
-		console.log(this.state.selected);
-
+		
 		// bubble to parent
 		this.props.onChange(this);
 	},

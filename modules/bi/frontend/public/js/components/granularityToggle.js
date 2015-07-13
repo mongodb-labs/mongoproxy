@@ -1,3 +1,5 @@
+'use strict';
+
 var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
 var _ = require('lodash');
@@ -35,8 +37,7 @@ var GranularityToggle = React.createClass({
 	handleChange: function(element, checked) {
 		
 		this.setState({selected: element.val()})
-		console.log(this.state.selected);
-
+		
 		// bubble to parent
 		this.props.onChange(this);
 	},

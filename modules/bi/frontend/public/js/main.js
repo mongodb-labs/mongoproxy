@@ -1,3 +1,5 @@
+'use strict';
+
 window.jQuery = window.$ = require('jquery');
 require('bootstrap/js/button');
 require('./vendor/jquery.timer');

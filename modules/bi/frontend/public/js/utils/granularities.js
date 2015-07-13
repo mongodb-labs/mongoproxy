@@ -1,3 +1,5 @@
+'use strict';
+
 // helper function to get the proper time scale for moment.JS given a time granularity.
 var getProperGranularity = function(granularity) {
 	switch (granularity) {

@@ -25,10 +25,14 @@ type MongodModule struct {
 var mongoSession *mgo.Session
 
 func init() {
-
+	server.Publish(&MongodModule{})
 }
 
-func (m MongodModule) Name() string {
+func (m *MongodModule) New() server.Module {
+	return &MongodModule{}
+}
+
+func (m *MongodModule) Name() string {
 	return "mongod"
 }
 
@@ -45,7 +49,7 @@ Configuration structure:
 	}
 }
 */
-func (m MongodModule) Configure(conf bson.M) error {
+func (m *MongodModule) Configure(conf bson.M) error {
 	addrs, ok := conf["addresses"].([]string)
 	if !ok {
 		// check if it's a slice of interfaces
@@ -95,7 +99,7 @@ func (m MongodModule) Configure(conf bson.M) error {
 	return nil
 }
 
-func (m MongodModule) Process(req messages.Requester, res messages.Responder,
+func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 
 	// spin up the session if it doesn't exist

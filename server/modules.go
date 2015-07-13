@@ -20,4 +20,7 @@ type Module interface {
 	// Responder that it writes a response to, and a PipelineFunc that should
 	// be called to execute the next module in the pipeline.
 	Process(messages.Requester, messages.Responder, PipelineFunc)
+
+	// New creates a new instance of this module
+	New() Module
 }

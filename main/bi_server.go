@@ -4,8 +4,6 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
-	"github.com/mongodbinc-interns/mongoproxy/modules/mockule"
 	"github.com/mongodbinc-interns/mongoproxy/server"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -28,10 +26,10 @@ func main() {
 	SetLogLevel(logLevel)
 
 	// initialize the mockule
-	mockule := mockule.Mockule{}
+	mockule := server.Registry["mockule"]
 
 	// initialize BI module
-	biModule := bi.BIModule{}
+	biModule := server.Registry["bi"]
 
 	ruleBSON := bson.M{
 		"origin":          "test.foo",

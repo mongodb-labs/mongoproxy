@@ -23,12 +23,15 @@ type BIModule struct {
 
 var mongoSession *mgo.Session
 
-// TODO: have a specific function for configuring modules.
 func init() {
-
+	server.Publish(&BIModule{})
 }
 
-func (b BIModule) Name() string {
+func (b *BIModule) New() server.Module {
+	return &BIModule{}
+}
+
+func (b *BIModule) Name() string {
 	return "bi"
 }
 
@@ -56,7 +59,7 @@ Configuration structure:
 	]
 }
 */
-func (b BIModule) Configure(conf bson.M) error {
+func (b *BIModule) Configure(conf bson.M) error {
 	conn := convert.ToBSONMap(conf["connection"])
 	if conn == nil {
 		return fmt.Errorf("No connection data")
@@ -147,7 +150,7 @@ func (b BIModule) Configure(conf bson.M) error {
 	return nil
 }
 
-func (b BIModule) Process(req messages.Requester, res messages.Responder,
+func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 
 	resNext := messages.ModuleResponse{}

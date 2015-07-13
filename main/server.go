@@ -4,9 +4,8 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/modules/mockule"
 	"github.com/mongodbinc-interns/mongoproxy/server"
-	"gopkg.in/mgo.v2/bson"
+	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 )
 
 var (
@@ -26,12 +25,9 @@ func main() {
 	parseFlags()
 	SetLogLevel(logLevel)
 
-	// initialize the mockule
-	mockule := mockule.Mockule{}
-
 	// initialize the pipeline
 	chain := server.CreateChain()
-	chain.AddModule(mockule)
+	chain.AddModule(server.Registry["mockule"])
 
 	mongoproxy.Start(port, chain)
 }

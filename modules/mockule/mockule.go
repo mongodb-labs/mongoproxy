@@ -23,6 +23,14 @@ var database = make(map[string][]bson.D)
 type Mockule struct {
 }
 
+func init() {
+	server.Publish(Mockule{})
+}
+
+func (m Mockule) New() server.Module {
+	return m
+}
+
 func (m Mockule) Name() string {
 	return "mockule"
 }

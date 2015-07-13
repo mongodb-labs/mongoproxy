@@ -40,6 +40,10 @@ func (f *MockRes) Error(code int32, message string) {
 type ModuleOne struct {
 }
 
+func (m ModuleOne) New() Module {
+	return m
+}
+
 func (m ModuleOne) Name() string {
 	return "one"
 }
@@ -53,6 +57,10 @@ func (m ModuleOne) Process(req messages.Requester, res messages.Responder, next 
 	r.Reply = msgOne
 	res.Write(r)
 	next(req, res)
+}
+
+func (m ModuleTwo) New() Module {
+	return m
 }
 
 type ModuleTwo struct {

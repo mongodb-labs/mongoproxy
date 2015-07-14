@@ -19,8 +19,6 @@ var App = React.createClass({
 	render: function() {
 		return <div>
 			<div className="container">
-				<h1>Hello World!</h1>
-				<hr />
 				<GraphPanel panelID={this.getNextUid('panel')} rules={window.config.Rules}/>
 			</div>
 		</div>;

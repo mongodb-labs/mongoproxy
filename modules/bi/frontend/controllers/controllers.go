@@ -14,7 +14,7 @@ import (
 )
 
 // biModule is an instance of a BI Module used as reference for the frontend.
-var biModule bi.BIModule
+var biModule *bi.BIModule
 
 // Temporary code to connect to a MongoDB instance. TODO: use the configuration
 // from the biModule!
@@ -288,7 +288,7 @@ func getTabularMetric(c *gin.Context) {
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
-func Setup(r *gin.Engine, source bi.BIModule) *gin.Engine {
+func Setup(r *gin.Engine, source *bi.BIModule) *gin.Engine {
 	biModule = source
 
 	r.GET("/", getMain)

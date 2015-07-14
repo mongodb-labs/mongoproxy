@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend/controllers"
@@ -14,13 +15,15 @@ var funcMap = template.FuncMap{
 	// marshal converts an interface{} into a JSON object that can be consumed
 	// by the browser.
 	"marshal": func(v interface{}) template.JS {
-		a, _ := json.Marshal(v)
+		fmt.Printf("%#v", v)
+		a, err := json.Marshal(v)
+		fmt.Printf("%#v", err)
 		return template.JS(a)
 	},
 }
 
 // Start initializes a new server for the BI Module Frontend.
-func Start(module bi.BIModule) *gin.Engine {
+func Start(module *bi.BIModule) *gin.Engine {
 	r := gin.New()
 
 	// set up views
@@ -75,6 +78,6 @@ func main() {
 	biModule.Rules = append(biModule.Rules, rule)
 	biModule.Rules = append(biModule.Rules, rule2)
 
-	r := Start(biModule)
+	r := Start(&biModule)
 	r.Run(":8080")
 }

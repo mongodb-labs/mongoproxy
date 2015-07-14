@@ -4,8 +4,6 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/server"
-	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -26,15 +24,16 @@ func main() {
 	parseFlags()
 	SetLogLevel(logLevel)
 
-	module := server.Registry["mongod"].New()
-
 	connection := bson.M{}
 	connection["addresses"] = []string{"localhost:27017"}
 
-	// initialize the pipeline
-	chain := server.CreateChain()
-	module.Configure(connection)
-	chain.AddModule(module)
+	modules := make([]bson.M, 1)
+	modules[0] = bson.M{
+		"name":   "mongod",
+		"config": connection,
+	}
 
-	mongoproxy.Start(port, chain)
+	mongoproxy.StartWithConfig(port, bson.M{
+		"modules": modules,
+	})
 }

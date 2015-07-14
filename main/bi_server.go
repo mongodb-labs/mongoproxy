@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/server"
+	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -25,12 +25,6 @@ func main() {
 	parseFlags()
 	SetLogLevel(logLevel)
 
-	// initialize the mockule
-	mockule := server.Registry["mockule"]
-
-	// initialize BI module
-	biModule := server.Registry["bi"]
-
 	ruleBSON := bson.M{
 		"origin":          "test.foo",
 		"prefix":          "db.metrics",
@@ -44,12 +38,20 @@ func main() {
 	biConfig["connection"] = connection
 	biConfig["rules"] = []bson.M{ruleBSON}
 
+	modules := make([]bson.M, 2)
+	modules[0] = bson.M{
+		"name":   "bi",
+		"config": biConfig,
+	}
+	modules[1] = bson.M{
+		"name":   "mockule",
+		"config": bson.M{},
+	}
+
 	// initialize the pipeline
-	chain := server.CreateChain()
+	config := bson.M{
+		"modules": modules,
+	}
 
-	chain.AddModule(biModule)
-	biModule.Configure(biConfig)
-	chain.AddModule(mockule)
-
-	mongoproxy.Start(port, chain)
+	mongoproxy.StartWithConfig(port, config)
 }

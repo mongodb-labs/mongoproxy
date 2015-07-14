@@ -20,7 +20,9 @@
         <div id="app"></div>
 
         <script>
-            window.config = {{ marshal .module }}
+            window.config = {
+                Rules: {{ marshal .module.Rules }}
+            }
         </script>
         <script src="/public/build/main.js"></script>
     </body>

@@ -56,7 +56,7 @@ func StartWithConfig(port int, config bson.M) {
 		moduleConfig := convert.ToBSONMap(modules[i]["config"])
 		err := module.Configure(moduleConfig)
 		if err != nil {
-			Log(WARNING, "Invalid configuration for module: %v", moduleName)
+			Log(WARNING, "Invalid configuration for module %v: %v", moduleName, err)
 			continue
 		}
 		chain.AddModule(module)

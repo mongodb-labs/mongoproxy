@@ -1,0 +1,26 @@
+{
+	"modules": [
+		{
+			"name": "bi",
+			"config": {
+				"connection": {
+					"addresses": [
+						"localhost:27017"
+					]
+				},
+				"rules": [
+					{
+						"origin": "test.foo",
+						"prefix": "db.metrics",
+						"timeGranularity": ["M", "D", "m"],
+						"valueField": "amount"
+					}
+				]
+			}
+		},
+		{
+			"name": "mockule",
+			"config": {}
+		}
+	]
+}

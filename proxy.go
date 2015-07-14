@@ -21,7 +21,7 @@ func Start(port int, chain *server.ModuleChain) {
 	}
 
 	pipeline := server.BuildPipeline(chain)
-
+	Log(INFO, "Server running on port %v", port)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -39,7 +39,7 @@ func StartWithConfig(port int, config bson.M) {
 	chain := server.CreateChain()
 	modules, err := convert.ConvertToBSONMapSlice(config["modules"])
 	if err != nil {
-		Log(ERROR, "Invalid module configuration, or proxy was started with no modules.")
+		Log(ERROR, "Invalid module configuration, or proxy was started with no modules: %v.", err)
 		return
 	}
 

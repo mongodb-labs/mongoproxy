@@ -60,6 +60,7 @@ Configuration structure:
 }
 */
 func (b *BIModule) Configure(conf bson.M) error {
+
 	conn := convert.ToBSONMap(conf["connection"])
 	if conn == nil {
 		return fmt.Errorf("No connection data")

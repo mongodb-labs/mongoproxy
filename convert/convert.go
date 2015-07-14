@@ -201,14 +201,19 @@ func ToBSONDoc(in interface{}) bson.D {
 // conversion fails.
 func ToBSONMap(in interface{}) bson.M {
 	m, ok := in.(bson.M)
-	if !ok {
-		d, ok2 := in.(bson.D)
-		if ok2 {
-			return d.Map()
-		}
-		return nil
+	if ok {
+		return m
 	}
-	return m
+	d, ok2 := in.(bson.D)
+	if ok2 {
+		return d.Map()
+	}
+	m2, ok3 := in.(map[string]interface{})
+	if ok3 {
+		return bson.M(m2)
+	}
+	return nil
+
 }
 
 // ConvertToBSONMapSlice converts an []interface{}, []bson.D, or []bson.M slice to a []bson.M
@@ -243,8 +248,14 @@ func ConvertToBSONMapSlice(input interface{}) ([]bson.M, error) {
 				if ok3 {
 					docM = docD.Map()
 				} else {
-					// error
-					return nil, fmt.Errorf("Slice contents aren't BSON objects")
+
+					docMap, ok4 := doc.(map[string]interface{})
+					if !ok4 {
+						// error
+						return nil, fmt.Errorf("Slice contents aren't BSON objects")
+					}
+					docM = bson.M(docMap)
+
 				}
 			}
 

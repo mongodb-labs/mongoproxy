@@ -3,9 +3,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/mongodbinc-interns/mongoproxy"
+	"fmt"
+	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
+	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
+	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend"
+	"github.com/mongodbinc-interns/mongoproxy/server"
+	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
@@ -20,7 +25,7 @@ var (
 )
 
 func parseFlags() {
-	flag.IntVar(&port, "port", 8124, "port to listen on")
+	flag.IntVar(&port, "port", 8080, "port to listen on")
 	flag.IntVar(&logLevel, "logLevel", 3, "verbosity for logging")
 	flag.StringVar(&mongoURI, "m", "mongodb://localhost:27017", "MongoDB instance to connect to for configuration.")
 	flag.StringVar(&configNamespace, "c", "test.config", "Namespace to query for configuration.")
@@ -66,5 +71,34 @@ func main() {
 		}
 	}
 
-	mongoproxy.StartWithConfig(port, result)
+	modules, err := convert.ConvertToBSONMapSlice(result["modules"])
+	if err != nil {
+		Log(ERROR, "Invalid module configuration: %v.", err)
+		return
+	}
+
+	var module server.Module
+	var moduleConfig bson.M
+	for i := 0; i < len(modules); i++ {
+		moduleName := convert.ToString(modules[i]["name"])
+		if moduleName == "bi" {
+			module = server.Registry["bi"].New()
+			// TODO: allow links to other collections
+			moduleConfig = convert.ToBSONMap(modules[i]["config"])
+			break
+		}
+	}
+	if module == nil {
+		Log(ERROR, "No BI module found in configuration")
+		return
+	}
+
+	module.Configure(moduleConfig)
+	biModule, ok := module.(*bi.BIModule)
+	if !ok {
+		Log(ERROR, "Not a BI Module")
+	}
+
+	r := frontend.Start(biModule, "modules/bi/frontend")
+	r.Run(fmt.Sprintf(":%v", port))
 }

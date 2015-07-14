@@ -16,24 +16,9 @@ import (
 // biModule is an instance of a BI Module used as reference for the frontend.
 var biModule *bi.BIModule
 
-// Temporary code to connect to a MongoDB instance. TODO: use the configuration
-// from the biModule!
+// mongosession is a persistent session to the MongoDB database to query
+// metrics for the frontend
 var mongoSession *mgo.Session
-var mongoDBDialInfo = &mgo.DialInfo{
-	// TODO: Allow configurable connection info
-	Addrs:    []string{"localhost:27017"},
-	Timeout:  60 * time.Second,
-	Database: "test",
-}
-
-func init() {
-	var err error
-	mongoSession, err = mgo.DialWithInfo(mongoDBDialInfo)
-	if err != nil {
-		Log(ERROR, "%#v\n", err)
-		return
-	}
-}
 
 // metricParam contains the parameters from the URL GET request for metrics.
 type metricParam struct {
@@ -288,13 +273,21 @@ func getTabularMetric(c *gin.Context) {
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
-func Setup(r *gin.Engine, source *bi.BIModule) *gin.Engine {
+func Setup(r *gin.Engine, source *bi.BIModule, baseDir string) *gin.Engine {
 	biModule = source
+
+	// set up mongod connection
+	var err error
+	mongoSession, err = mgo.DialWithInfo(&biModule.Connection)
+	if err != nil {
+		Log(ERROR, "%#v\n", err)
+		return r
+	}
 
 	r.GET("/", getMain)
 	r.GET("/data/:ruleIndex/:granularity/:start/:end", getMetric)
 	r.GET("/tabular/:ruleIndex/:granularity/:start/:end", getTabularMetric)
 
-	r.Static("/public", "./public")
+	r.Static("/public", baseDir+"/public")
 	return r
 }

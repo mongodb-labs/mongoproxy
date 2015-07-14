@@ -7,9 +7,7 @@ import (
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend"
-	"github.com/mongodbinc-interns/mongoproxy/server"
 	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -39,6 +37,7 @@ func main() {
 	SetLogLevel(logLevel)
 
 	// grab config file
+	// Currently, it will take the configuration of the first BI module found in the chain.
 	var result bson.M
 	if len(configFilename) == 0 {
 		mongoSession, err := mgo.Dial(mongoURI)
@@ -77,28 +76,19 @@ func main() {
 		return
 	}
 
-	var module server.Module
 	var moduleConfig bson.M
 	for i := 0; i < len(modules); i++ {
 		moduleName := convert.ToString(modules[i]["name"])
 		if moduleName == "bi" {
-			module = server.Registry["bi"].New()
 			// TODO: allow links to other collections
 			moduleConfig = convert.ToBSONMap(modules[i]["config"])
 			break
 		}
 	}
-	if module == nil {
+	if moduleConfig == nil {
 		Log(ERROR, "No BI module found in configuration")
 		return
 	}
-
-	module.Configure(moduleConfig)
-	biModule, ok := module.(*bi.BIModule)
-	if !ok {
-		Log(ERROR, "Not a BI Module")
-	}
-
-	r := frontend.Start(biModule, "modules/bi/frontend")
+	r := frontend.Start(moduleConfig, "modules/bi/frontend")
 	r.Run(fmt.Sprintf(":%v", port))
 }

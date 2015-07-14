@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend/controllers"
+	"gopkg.in/mgo.v2/bson"
 	"html/template"
 )
 
@@ -23,7 +23,7 @@ var funcMap = template.FuncMap{
 }
 
 // Start initializes a new server for the BI Module Frontend.
-func Start(module *bi.BIModule, baseDir string) *gin.Engine {
+func Start(config bson.M, baseDir string) *gin.Engine {
 	r := gin.New()
 
 	// set up views
@@ -36,7 +36,7 @@ func Start(module *bi.BIModule, baseDir string) *gin.Engine {
 	}
 
 	// set up routes
-	controllers.Setup(r, module, baseDir)
+	controllers.Setup(r, config, baseDir)
 
 	return r
 }

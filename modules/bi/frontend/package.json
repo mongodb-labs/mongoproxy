@@ -9,8 +9,9 @@
     "start": "npm run build && cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
     "serve": "cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
     "build:css": "mkdir -p public/build && ./node_modules/.bin/lessc ./public/css/main.less > ./public/build/main.css",
-    "build:js": "mkdir -p public/build && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/main.js > ./public/build/main.js",
-    "watch:js": "mkdir -p public/build && ./node_modules/.bin/watchify -t [ reactify --es6 ] ./public/js/main.js -o ./public/build/main.js -v",
+    "build:js": "mkdir -p public/build && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/main.js > ./public/build/main.js && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/config.js > ./public/build/config.js",
+    "watch:app": "mkdir -p public/build && ./node_modules/.bin/watchify -t [ reactify --es6 ] ./public/js/main.js -o ./public/build/main.js -v",
+    "watch:config": "mkdir -p public/build && ./node_modules/.bin/watchify -t [ reactify --es6 ] ./public/js/config.js -o ./public/build/config.js -v",
     "build": "npm run build:js && npm run build:css"
   },
   "dependencies": {

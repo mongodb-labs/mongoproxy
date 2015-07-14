@@ -15,6 +15,7 @@ import (
 
 // biModule is an instance of a BI Module used as reference for the frontend.
 var biModule *bi.BIModule
+var biConfig bson.M
 
 // mongosession is a persistent session to the MongoDB database to query
 // metrics for the frontend
@@ -270,11 +271,21 @@ func getTabularMetric(c *gin.Context) {
 
 }
 
+func getConfig(c *gin.Context) {
+	c.HTML(http.StatusOK, "config_ui.html", gin.H{
+		"config": biConfig,
+	})
+}
+
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
-func Setup(r *gin.Engine, source *bi.BIModule, baseDir string) *gin.Engine {
-	biModule = source
+func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
+
+	biModule = &bi.BIModule{}
+	biModule.Configure(config)
+
+	biConfig = config
 
 	// set up mongod connection
 	var err error
@@ -285,6 +296,7 @@ func Setup(r *gin.Engine, source *bi.BIModule, baseDir string) *gin.Engine {
 	}
 
 	r.GET("/", getMain)
+	r.GET("/config", getConfig)
 	r.GET("/data/:ruleIndex/:granularity/:start/:end", getMetric)
 	r.GET("/tabular/:ruleIndex/:granularity/:start/:end", getTabularMetric)
 

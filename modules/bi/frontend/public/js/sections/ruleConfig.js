@@ -10,22 +10,24 @@ var _ = require('lodash');
 
 var tg = require('../utils/convertTimeGranularity');
 
-var defaultRule = {
-	origin: "db.originCollection",
-	prefix: "db.metricCollection",
-	timeGranularity: {
-		Month: true,
-		Day: true,
-		Hour: true,
-		Minute: true,
-		Second: true
-	},
-	valueField: "fieldName",
-	timeField: ""
-}
+
 var RuleConfig = React.createClass({
 	getInitialState: function() {
+		var defaultRule = {
+				origin: "db.originCollection",
+				prefix: "db.metricCollection",
+				timeGranularity: {
+					Month: true,
+					Day: true,
+					Hour: true,
+					Minute: true,
+					Second: true
+				},
+				valueField: "fieldName",
+				timeField: ""
+			}
 		return {
+			defaultRule: defaultRule,
 			rule: _.extend(defaultRule,
 				tg.convertToBooleans(this.props.rule)),
 			settings: {
@@ -45,16 +47,31 @@ var RuleConfig = React.createClass({
 			}
 		}
 	},
+	componentDidMount: function() {
+		
+		this.props.onChange(this, this.state.rule)
+	},
 	handleClick: function() {
 
 		this.props.onClick(this.props.key);
 		// bubble up to parent
 	},
+	getRule: function() {
+		return this.state.rule;
+	},
+	handleChange: function(value) {
+		this.setState({
+			rule: value
+		});
+
+		// bubble up to parent
+		this.props.onChange(this, value);
+	},
 	render: function() {
 		return <Panel>
-			<JSONEditor value={ this.state.rule } settings={ this.state.settings }/>
+			<JSONEditor onChange={this.handleChange} value={ this.state.rule } settings={ this.state.settings }/>
 			<hr />
-			<Button onClick={this.handleClick} >Delete Rule</Button>
+			<Button bsStyle='danger' onClick={this.handleClick} >Delete Rule</Button>
 		</Panel>
 		
 

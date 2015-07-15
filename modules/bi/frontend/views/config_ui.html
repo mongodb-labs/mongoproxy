@@ -21,6 +21,14 @@
 
         <script>
             window.config = {{ marshal .config }}
+            if (!window.config) {
+                window.config = {
+                    connection: {
+
+                    },
+                    rules: []
+                };
+            }
         </script>
         <script src="/public/build/config.js"></script>
     </body>

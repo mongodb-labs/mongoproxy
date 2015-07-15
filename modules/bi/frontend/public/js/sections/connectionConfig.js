@@ -22,13 +22,24 @@ var ConnectionConfig = React.createClass({
 			connection: _.extend(defaultConnection, window.config.connection)
 		}
 	},
+
+	handleChange: function(value) {
+		// bubble up to parent
+		this.setState({
+			connection: value
+		});
+		this.props.onChange(this, value)
+	},
+
 	render: function() {
 		var settings = {
 			form: false,
 			editing: 'always',
 		};
 		return <Panel>
-			<JSONEditor value={ this.state.connection } settings={ settings }/>
+			<h2>Connection</h2>
+			<hr />
+			<JSONEditor onChange={this.handleChange} value={ this.state.connection } settings={ settings }/>
 		</Panel>
 	}
 })

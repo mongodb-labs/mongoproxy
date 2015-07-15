@@ -8,6 +8,7 @@ import (
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend"
+	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend/controllers"
 	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -39,6 +40,7 @@ func main() {
 	// grab config file
 	// Currently, it will take the configuration of the first BI module found in the chain.
 	var result bson.M
+	var configLocation *controllers.ConfigLocation
 	if len(configFilename) == 0 {
 		mongoSession, err := mgo.Dial(mongoURI)
 		if err != nil {
@@ -54,8 +56,12 @@ func main() {
 
 		err = mongoSession.DB(database).C(collection).Find(bson.M{}).One(&result)
 		if err != nil {
-			Log(ERROR, "Error querying MongoDB for configuration: %#v\n", err)
-			return
+			Log(WARNING, "Error querying MongoDB for configuration: %#v\n", err)
+		}
+		configLocation = &controllers.ConfigLocation{
+			Session:    mongoSession,
+			Database:   database,
+			Collection: collection,
 		}
 	} else {
 		file, err := ioutil.ReadFile(configFilename)
@@ -72,23 +78,24 @@ func main() {
 
 	modules, err := convert.ConvertToBSONMapSlice(result["modules"])
 	if err != nil {
-		Log(ERROR, "Invalid module configuration: %v.", err)
-		return
+		Log(WARNING, "Invalid module configuration: %v.", err)
 	}
 
 	var moduleConfig bson.M
-	for i := 0; i < len(modules); i++ {
-		moduleName := convert.ToString(modules[i]["name"])
-		if moduleName == "bi" {
-			// TODO: allow links to other collections
-			moduleConfig = convert.ToBSONMap(modules[i]["config"])
-			break
+	if modules != nil {
+		for i := 0; i < len(modules); i++ {
+			moduleName := convert.ToString(modules[i]["name"])
+			if moduleName == "bi" {
+				// TODO: allow links to other collections
+				moduleConfig = convert.ToBSONMap(modules[i]["config"])
+				break
+			}
 		}
 	}
+
 	if moduleConfig == nil {
-		Log(ERROR, "No BI module found in configuration")
-		return
+		Log(WARNING, "No BI module found in configuration")
 	}
-	r := frontend.Start(moduleConfig, "modules/bi/frontend")
+	r := frontend.Start(moduleConfig, "modules/bi/frontend", configLocation)
 	r.Run(fmt.Sprintf(":%v", port))
 }

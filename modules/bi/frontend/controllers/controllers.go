@@ -20,6 +20,7 @@ var biConfig bson.M
 // mongosession is a persistent session to the MongoDB database to query
 // metrics for the frontend
 var mongoSession *mgo.Session
+var configSession *mgo.Session
 
 // metricParam contains the parameters from the URL GET request for metrics.
 type metricParam struct {
@@ -277,26 +278,45 @@ func getConfig(c *gin.Context) {
 	})
 }
 
+func postConfig(c *gin.Context) {
+	var result bson.M
+	err := c.BindJSON(&result)
+	if err == nil {
+		_, err := updateConfiguration(result)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err,
+				"ok":    0,
+			})
+		} else {
+			c.JSON(200, result)
+		}
+	}
+}
+
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
 func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
-
 	biModule = &bi.BIModule{}
-	biModule.Configure(config)
-
 	biConfig = config
 
-	// set up mongod connection
-	var err error
-	mongoSession, err = mgo.DialWithInfo(&biModule.Connection)
-	if err != nil {
-		Log(ERROR, "%#v\n", err)
-		return r
+	if config != nil {
+		biModule.Configure(config)
+
+		// set up mongod connection
+		var err error
+		mongoSession, err = mgo.DialWithInfo(&biModule.Connection)
+		if err != nil {
+			Log(ERROR, "%#v\n", err)
+			return r
+		}
+
 	}
 
 	r.GET("/", getMain)
 	r.GET("/config", getConfig)
+	r.POST("/config", postConfig)
 	r.GET("/data/:ruleIndex/:granularity/:start/:end", getMetric)
 	r.GET("/tabular/:ruleIndex/:granularity/:start/:end", getTabularMetric)
 

@@ -16,6 +16,16 @@ module.exports = {
 				success: callback,
 				error: error
 			})
+	},
+
+	postConfiguration: function(configJSON, callback, error) {
+		$.ajax({
+			type: "POST",
+			url: '/config',
+			data: JSON.stringify(configJSON),
+			success: callback,
+			error: error
+		})
 	}
 
 }

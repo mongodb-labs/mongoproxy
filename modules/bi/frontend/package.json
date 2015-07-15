@@ -24,6 +24,8 @@
     "react": "^0.13.3",
     "react-bootstrap": "^0.23.7",
     "react-bootstrap-multiselect": "^0.2.2",
+    "react-json": "git+https://github.com/arqex/react-json.git",
+    "sweetalert": "^1.0.1",
     "unique-id-mixin": "^1.0.0"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ var TimeseriesChart = React.createClass({
         this.chart = c3.generate({
             data: {
                 x: "time",
-                xFormat: '%Y-%m-%dT%H:%M:%S.%LZ',
+                xFormat: '%Y-%m-%dT%H:%M:%SZ',
                 columns: (data || [])
             },
             type: "spline",

@@ -2,7 +2,6 @@ package frontend
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend/controllers"
 	"gopkg.in/mgo.v2/bson"
@@ -15,9 +14,7 @@ var funcMap = template.FuncMap{
 	// marshal converts an interface{} into a JSON object that can be consumed
 	// by the browser.
 	"marshal": func(v interface{}) template.JS {
-		fmt.Printf("%#v", v)
-		a, err := json.Marshal(v)
-		fmt.Printf("%#v", err)
+		a, _ := json.Marshal(v)
 		return template.JS(a)
 	},
 }

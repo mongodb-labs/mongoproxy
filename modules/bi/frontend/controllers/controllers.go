@@ -61,11 +61,11 @@ func getRangeInGranularities(startTime time.Time, endTime time.Time, granularity
 	switch granularity {
 	case bi.Monthly:
 		// we assume 30 days in a month for now.
-		hours := rDuration / time.Hour
+		hours := convert.ToInt(rDuration.Hours())
 		days := int(hours) / 24
 		r = days / 30
 	case bi.Daily:
-		hours := rDuration / time.Hour
+		hours := convert.ToInt(rDuration.Hours())
 		r = int(hours) / 24
 	case bi.Hourly:
 		r = convert.ToInt(rDuration.Hours())
@@ -169,6 +169,15 @@ func getTabularMetric(c *gin.Context) {
 		return
 	}
 
+	// TODO: the day and month graphs are offset from the hour, minute, and second
+	// ones, in which they are off from each other by 1 time granularity. Find some
+	// way to fix it.
+	params.Start, _ = bi.GetRoundedExactTime(params.Start, params.Granularity)
+	params.End, _ = bi.GetRoundedExactTime(params.End, params.Granularity)
+
+	// Should be inclusive of the end
+	params.End, _ = addGranularitiesToTime(params.End, params.Granularity, 1)
+
 	input, err := getDataOverRange(mongoSession, biModule.Rules[params.RuleIndex],
 		params.Granularity, params.Start, params.End)
 	if err != nil {
@@ -259,8 +268,8 @@ func getTabularMetric(c *gin.Context) {
 
 			index, _ := getRangeInGranularities(params.Start, cTime, params.Granularity)
 			// indexes are going to be off by 1, since we want to be inclusive of the end time.
-			if index > 0 && index <= r {
-				dataArray[index-1] = val
+			if index >= 0 && index < r {
+				dataArray[index] = val
 			}
 		}
 	}
@@ -282,7 +291,7 @@ func postConfig(c *gin.Context) {
 	var result bson.M
 	err := c.BindJSON(&result)
 	if err == nil {
-		_, err := updateConfiguration(result)
+		err := updateConfiguration(result)
 		if err != nil {
 			c.JSON(500, gin.H{
 				"error": err,

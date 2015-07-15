@@ -138,10 +138,13 @@ func (b *BIModule) Configure(conf bson.M) error {
 		} else {
 			timeFieldRaw, ok := r["timeField"].(string)
 			if ok {
-				err := timeField.UnmarshalText([]byte(timeFieldRaw))
-				if err != nil {
-					rule.TimeField = &timeField
+				if len(timeFieldRaw) > 0 {
+					err := timeField.UnmarshalText([]byte(timeFieldRaw))
+					if err != nil {
+						rule.TimeField = &timeField
+					}
 				}
+
 			}
 		}
 

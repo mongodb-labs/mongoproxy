@@ -24,7 +24,6 @@ function setChart(graphPanel, unload) {
 		var i = rule.index || key;
 		var label = rule.label;
 		getCurrentMetric(graphPanel.props.rules, graphPanel.state.granularity, i, function(data) {
-
 			// label for the time axis
 			if (!graphData.length) {
 				graphData[0] = data.time;

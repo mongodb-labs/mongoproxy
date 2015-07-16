@@ -31,7 +31,7 @@ func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, st
 	}
 
 	// make sure the documents are in sorted order.
-	iter := c.Find(query).Sort("-start").Iter()
+	iter := c.Find(query).Sort("start").Iter()
 
 	var results []bson.M
 

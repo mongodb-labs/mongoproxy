@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf public/js/build",
-    "start": "npm run build && cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
-    "serve": "cd ../../../ && ./set_gopath.sh && cd modules/bi/frontend && go run server.go",
+    "start": "npm run build && cd ../../../ && ./start_frontend.sh",
+    "serve": "cd ../../../ && ./set_gopath.sh && go run main/frontend.go",
     "build:css": "mkdir -p public/build && ./node_modules/.bin/lessc ./public/css/main.less > ./public/build/main.css",
     "build:js": "mkdir -p public/build && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/main.js > ./public/build/main.js && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/config.js > ./public/build/config.js",
     "watch:app": "mkdir -p public/build && ./node_modules/.bin/watchify -t [ reactify --es6 ] ./public/js/main.js -o ./public/build/main.js -v",

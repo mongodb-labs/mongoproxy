@@ -37,6 +37,8 @@ type metricParam struct {
 	End time.Time
 }
 
+const timeLayout = "2006-01-02 15:04:05"
+
 func getGranularityField(granularity string) (string, error) {
 	switch granularity {
 	case bi.Monthly:
@@ -173,19 +175,6 @@ func getTabularMetric(c *gin.Context) {
 	// ones, in which they are off from each other by 1 time granularity. Find some
 	// way to fix it.
 	params.Start, _ = bi.GetRoundedExactTime(params.Start, params.Granularity)
-	params.End, _ = bi.GetRoundedExactTime(params.End, params.Granularity)
-
-	// Should be inclusive of the end
-	params.End, _ = addGranularitiesToTime(params.End, params.Granularity, 1)
-
-	input, err := getDataOverRange(mongoSession, biModule.Rules[params.RuleIndex],
-		params.Granularity, params.Start, params.End)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error": err,
-		})
-		return
-	}
 
 	r, err := getRangeInGranularities(params.Start, params.End, params.Granularity)
 
@@ -202,25 +191,17 @@ func getTabularMetric(c *gin.Context) {
 		})
 		return
 	}
-	timeArray := make([]time.Time, r)
-	currentTime := params.Start
-	for i := 0; i < r; i++ {
-		timeArray[i] = currentTime
-		currentTime, _ = addGranularitiesToTime(currentTime, params.Granularity, 1)
-	}
 
-	// initialize the data array
-	dataArray := make([]float64, r)
-
-	// we have nothing. Return as is.
-	if len(input) == 0 {
-		c.JSON(200, gin.H{
-			"data": dataArray,
-			"time": timeArray,
+	input, err := getDataOverRange(mongoSession, biModule.Rules[params.RuleIndex],
+		params.Granularity, params.Start, params.End)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err,
 		})
 		return
 	}
 
+	dataArray := make([]bson.M, 0)
 	for i := 0; i < len(input); i++ {
 		var ticks int
 		inputStartTime, ok := input[i]["start"].(time.Time)
@@ -263,20 +244,31 @@ func getTabularMetric(c *gin.Context) {
 			continue
 		}
 		for j := 0; j < ticks; j++ {
-			val := convert.ToFloat64(dataField[strconv.Itoa(j)], 0)
+			index := j
+			if params.Granularity == bi.Monthly ||
+				params.Granularity == bi.Daily {
+				// days and months start on 1, not 0
+				index = j + 1
+			}
+			val := convert.ToFloat64(dataField[strconv.Itoa(index)], 0)
 			cTime, _ := addGranularitiesToTime(inputStartTime, params.Granularity, j)
 
-			index, _ := getRangeInGranularities(params.Start, cTime, params.Granularity)
-			// indexes are going to be off by 1, since we want to be inclusive of the end time.
-			if index >= 0 && index < r {
-				dataArray[index] = val
+			if cTime.Before(params.Start) {
+				continue
 			}
+			if cTime.After(params.End) {
+				continue
+			}
+
+			dataArray = append(dataArray, bson.M{
+				"value": val,
+				"time":  cTime.Format(timeLayout),
+			})
 		}
 	}
 
-	c.JSON(200, gin.H{
+	c.IndentedJSON(200, gin.H{
 		"data": dataArray,
-		"time": timeArray,
 	})
 
 }

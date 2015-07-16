@@ -40,7 +40,7 @@ type Rule struct {
 }
 
 func createSelector(t time.Time, granularity string, valueField string) (bson.D, error) {
-	start, err := GetRoundedTime(t, granularity)
+	start, err := GetStartTime(t, granularity)
 	if err != nil {
 		return nil, err
 	}

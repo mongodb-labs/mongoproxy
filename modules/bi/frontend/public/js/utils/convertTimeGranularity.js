@@ -1,5 +1,7 @@
 'use strict';
 
+// helper function to convert boolean time granularities to string array
+// for storage in the database.
 function convertToStringArray(input){
 	var oldGranularities = input.timeGranularity;
 	if (!oldGranularities) {
@@ -26,6 +28,8 @@ function convertToStringArray(input){
 	return input;
 }
 
+// helper function to convert string array time granularities to booleans
+// for easier editing of configuration document.
 function convertToBooleans(input) {
 	var newGranularities = {
 		Month: false,

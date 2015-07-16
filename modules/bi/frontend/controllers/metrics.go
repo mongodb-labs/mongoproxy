@@ -7,13 +7,15 @@ import (
 	"time"
 )
 
-// getDataOverRange is a helper function that queries the MongoDB database for metric documents matching
-// the given rule and granularity between the start and end times.
-func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string, start time.Time, end time.Time) ([]bson.M, error) {
+// getDataOverRange is a helper function that queries the MongoDB database for
+// metric documents matching the given rule and granularity between the start
+// and end times.
+func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string,
+	start time.Time, end time.Time) ([]bson.M, error) {
 
 	db := session.DB(rule.PrefixDatabase)
 
-	startRange, err := bi.GetRoundedTime(start, granularity)
+	startRange, err := bi.GetStartTime(start, granularity)
 	if err != nil {
 		return nil, err
 	}

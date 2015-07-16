@@ -4,6 +4,8 @@ var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
 var _ = require('lodash');
 
+// GranularityToggle is a select component that lets users choose the time
+// granularity to display on a graph.
 var GranularityToggle = React.createClass({
 	getInitialState: function() {
 		return {

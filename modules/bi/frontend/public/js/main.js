@@ -1,11 +1,12 @@
 'use strict';
 
+// Application file for the primary dashboard view.
+
 window.jQuery = window.$ = require('jquery');
 require('bootstrap/js/button');
 require('./vendor/jquery.timer');
 
 var React = require('react');
-var UniqeIdMixin = require('unique-id-mixin');
 
 var GraphPanel = require('./sections/graphPanel');
 
@@ -13,13 +14,12 @@ var GraphPanel = require('./sections/graphPanel');
 var addLabelToRules = require('./utils/addLabelToRules');
 addLabelToRules(window.config.Rules);
 
-// initialize the application
+// initialize the application. Currently starts up a single graph panel.
 var App = React.createClass({
-	mixins: [ UniqeIdMixin ],
 	render: function() {
 		return <div>
 			<div className="container">
-				<GraphPanel panelID={this.getNextUid('panel')} rules={window.config.Rules}/>
+				<GraphPanel panelID='panel' rules={window.config.Rules}/>
 			</div>
 		</div>;
 	}

@@ -56,7 +56,8 @@ func getGranularityField(granularity string) (string, error) {
 	}
 }
 
-func getRangeInGranularities(startTime time.Time, endTime time.Time, granularity string) (int, error) {
+func getRangeInGranularities(startTime time.Time, endTime time.Time,
+	granularity string) (int, error) {
 	r := 0
 
 	rDuration := endTime.Sub(startTime)
@@ -174,7 +175,7 @@ func getTabularMetric(c *gin.Context) {
 	// TODO: the day and month graphs are offset from the hour, minute, and second
 	// ones, in which they are off from each other by 1 time granularity. Find some
 	// way to fix it.
-	params.Start, _ = bi.GetRoundedExactTime(params.Start, params.Granularity)
+	params.Start, _ = bi.GetRoundedTime(params.Start, params.Granularity)
 
 	r, err := getRangeInGranularities(params.Start, params.End, params.Granularity)
 
@@ -273,12 +274,16 @@ func getTabularMetric(c *gin.Context) {
 
 }
 
+// getConfig is the handle for the configuration editor page.
 func getConfig(c *gin.Context) {
 	c.HTML(http.StatusOK, "config_ui.html", gin.H{
 		"config": biConfig,
 	})
 }
 
+// postConfig updates the configuration object in the config database to the value of the request
+// body. It fails if the config database was never set, or if there was no existing configuration
+// object in the database (as the BI module cannot set up an entire module pipeline configuration)
 func postConfig(c *gin.Context) {
 	var result bson.M
 	err := c.BindJSON(&result)

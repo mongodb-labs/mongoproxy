@@ -3,6 +3,8 @@
 var React = require('react')
 var c3 = require("c3");
 
+// TimeseriesChart is a line chart with time on the x axis, and whose data is received
+// in the props.data field.
 var TimeseriesChart = React.createClass({
     _renderChart: function(data) {
         // save reference to our chart to the instance

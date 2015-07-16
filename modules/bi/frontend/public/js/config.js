@@ -1,5 +1,9 @@
 'use strict';
 
+// Application file for the configuration editor.
+// TODO: Eventually split this entirely from the main, as it doesn't share
+// any components with the dashboard view.
+
 window.jQuery = window.$ = require('jquery');
 require('bootstrap/js/button');
 require('./vendor/jquery.timer');
@@ -8,7 +12,6 @@ require('sweetalert');
 var _ = require('lodash');
 
 var React = require('react');
-var UniqeIdMixin = require('unique-id-mixin');
 
 var ConnectionConfig = require('./sections/connectionConfig');
 var RuleConfig = require('./sections/ruleConfig');
@@ -25,8 +28,13 @@ var tg = require('./utils/convertTimeGranularity');
 var App = React.createClass({
 	getInitialState: function() {
 		return {
+			// HTML elements for individual rules, to be rendered
 			rulePanels: [],
+
+			// counter to ensure unique keys for rule panels
 			key: 0,
+
+			// the current configuration displayed in the application
 			configuration: window.config,
 		}
 	},
@@ -50,6 +58,8 @@ var App = React.createClass({
 		var index = _.findIndex(r, function(rule) {
   			return rule.key === i;
 		});
+
+		// remove the rule both from the HTML elements and from the state
 		r.splice(index, 1);
 		newConfig.rules.splice(index, 1);
 
@@ -71,7 +81,12 @@ var App = React.createClass({
 		})
 	},
 
+	// update a particular rule whenever the rule's information changes
 	handleRuleChange: function(component) {
+
+		// react doesn't let us see the state of all components when only
+		// one is updated, so we have to find the correct rule in the current
+		// state and modify that one
 		var newConfig = _.extend({}, this.state.configuration);
 		var index = _.findIndex(this.state.rulePanels, function(rule) {
   			return rule.key.toString() === component.props.keyIndex.toString();
@@ -86,6 +101,7 @@ var App = React.createClass({
 		console.log(this.state.configuration)
 	},
 
+	// update the state whenever the connection information changes
 	handleConnectionChange: function(component) {
 		var newConfig = {
 			connection: component.state.connection

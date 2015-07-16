@@ -10,7 +10,7 @@ var _ = require('lodash');
 
 var tg = require('../utils/convertTimeGranularity');
 
-
+// RuleConfig is an editor for an individual rule in the BI Module configuration.
 var RuleConfig = React.createClass({
 	getInitialState: function() {
 		var defaultRule = {

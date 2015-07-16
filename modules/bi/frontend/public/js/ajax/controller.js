@@ -18,6 +18,7 @@ module.exports = {
 			})
 	},
 
+	// AJAX request to save a configuration document.
 	postConfiguration: function(configJSON, callback, error) {
 		$.ajax({
 			type: "POST",

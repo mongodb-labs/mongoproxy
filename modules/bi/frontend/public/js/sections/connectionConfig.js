@@ -16,6 +16,8 @@ var defaultConnection = {
 		database: "database"
 	}
 }
+
+// ConnectionConfig is an editor for the connection part of BI Module configuration.
 var ConnectionConfig = React.createClass({
 	getInitialState: function() {
 		return {

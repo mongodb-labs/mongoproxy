@@ -4,6 +4,8 @@ var React = require('react')
 var Multiselect = require('react-bootstrap-multiselect');
 var _ = require('lodash');
 
+// RuleSelector is a multi selector that lets users choose which rules to display
+// on a graph.
 var RuleSelector = React.createClass({
 	getInitialState: function() {
 		return {

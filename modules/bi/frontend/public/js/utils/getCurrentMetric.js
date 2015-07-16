@@ -6,6 +6,11 @@ var moment = require('moment');
 var Controller = require('../ajax/controller');
 var g = require('./granularities');
 
+// gets the data in tabular form (that can be consumed by a TimeseriesChart) for the rule at
+// rules[index] and the granularity, and on success calls the callback, and on failure calls the error
+// functions.
+// Currently, gets data in a range spanning from 60 units of time before the present time, up
+// to the present time.
 function getCurrentMetric(rules, granularity, index, callback, error) {
 	var endTime = moment();
 	var startTime = moment();

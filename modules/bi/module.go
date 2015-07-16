@@ -159,9 +159,11 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 
 	resNext := messages.ModuleResponse{}
 	next(req, &resNext)
+
 	res.Write(resNext.Writer)
 
 	if resNext.CommandError != nil {
+		res.Error(resNext.CommandError.ErrorCode, resNext.CommandError.Message)
 		return // we're done. An error occured, so we shouldn't do any aggregating
 	}
 
@@ -196,6 +198,8 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 			// and pass it on to mongod
 			if opi.Collection != rule.OriginCollection ||
 				opi.Database != rule.OriginDatabase {
+				Log(DEBUG, "Didn't match database %v.%v. Was %v.%v", rule.OriginDatabase,
+					rule.OriginCollection, opi.Database, opi.Collection)
 				continue
 			}
 
@@ -230,10 +234,19 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 
 		for i := 0; i < len(updates); i++ {
 			u := updates[i]
+			if len(updates[i].Updates) == 0 {
+				continue
+			}
 			b := u.ToBSON()
 
 			reply := bson.D{}
-			mongoSession.DB(u.Database).Run(b, &reply)
+			Log(NOTICE, "%#v", b)
+			err := mongoSession.DB(u.Database).Run(b, &reply)
+			if err != nil {
+				Log(ERROR, "Error updating database: %v", err)
+			} else {
+				Log(INFO, "Successfully updated database!")
+			}
 		}
 
 	}

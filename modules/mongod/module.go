@@ -118,7 +118,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.CommandType:
 		command, err := messages.ToCommandRequest(req)
 		if err != nil {
-			Log(ERROR, "Error converting to command: %#v\n", err)
+			Log(WARNING, "Error converting to command: %#v\n", err)
 			next(req, res)
 			return
 		}
@@ -130,6 +130,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
+			Log(WARNING, "Error running command: %#v", err)
 			if ok {
 				res.Error(int32(qErr.Code), qErr.Message)
 			}

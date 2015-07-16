@@ -12,15 +12,19 @@
 					{
 						"origin": "test.foo",
 						"prefix": "db.metrics",
-						"timeGranularity": ["M", "D", "m"],
-						"valueField": "amount"
+						"timeGranularity": ["M", "D", "h", "m", "s"],
+						"valueField": "price"
 					}
 				]
 			}
 		},
 		{
-			"name": "mockule",
-			"config": {}
+			"name": "mongod",
+			"config": {
+				"addresses": [
+						"localhost:27017"
+					]
+			}
 		}
 	]
 }

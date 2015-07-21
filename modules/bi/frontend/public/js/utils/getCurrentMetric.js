@@ -11,46 +11,59 @@ var g = require('./granularities');
 // functions.
 // Currently, gets data in a range spanning from 60 units of time before the present time, up
 // to the present time.
-function getCurrentMetric(rules, granularity, index, callback, error) {
+
+function getCurrentMetric(rule, granularity, callback, error) {
 	var endTime = moment();
 	var startTime = moment();
-	var rule = rules[index];
+
+	function processMetric(data, callback) {
+		var graphData = [];
+		var graphTime = [];
+		var roundedTime = startTime.clone().startOf(g.getProperGranularity(granularity));
+
+		var i = 0;
+
+		while (roundedTime.isBefore(endTime) && i < data.data.length) {
+			var dataObj = data.data[i];
+			var time = moment(dataObj.time);
+			if (time.diff(roundedTime) == 0) {
+				graphData.push(dataObj.value);
+				i++;
+			}
+			else {
+				graphData.push(0);
+			}
+			graphTime.push(roundedTime.format("YYYY-MM-DD HH:mm:ss"))
+			roundedTime.add(1, g.getProperGranularity(granularity))
+		}
+
+		while (graphData.length < range) {
+			graphTime.push(roundedTime.format("YYYY-MM-DD HH:mm:ss"));
+			graphData.push(0);
+			roundedTime.add(1, g.getProperGranularity(granularity));
+		}
+		callback({
+			data: graphData,
+			time: graphTime
+		});
+	}
 
 	// TODO: eventually be able to expand the range
 	var range = 60;
 	startTime.subtract(range, g.getProperGranularity(granularity));
 
-	Controller.getTabularMetric(index, granularity, startTime, endTime,
-		function(data) {
-			var graphData = [];
-			var graphTime = [];
-			var roundedTime = startTime.clone().startOf(g.getProperGranularity(granularity));
-
-			var i = 0;
-
-			while(roundedTime.isBefore(endTime) && i < data.data.length) {
-				var dataObj = data.data[i];
-				var time = moment(dataObj.time);
-				if (time.diff(roundedTime) == 0) {
-					graphData.push(dataObj.value);
-					i ++;
-				} else {
-					graphData.push(0);
-				}
-				graphTime.push(roundedTime.format("YYYY-MM-DD HH:mm:ss"))
-				roundedTime.add(1, g.getProperGranularity(granularity))
-			}
-
-			while (graphData.length < range) {
-				graphTime.push(roundedTime.format("YYYY-MM-DD HH:mm:ss"));
-				graphData.push(0);
-				roundedTime.add(1, g.getProperGranularity(granularity));
-			}
-			callback({
-				data: graphData,
-				time: graphTime
-			});
+	if (rule.ValueType) {
+		Controller.getTabularMetricValue(rule.index, granularity, startTime, endTime, rule.ValueType,
+			function(data) {
+				processMetric(data, callback);
+			}, error);
+	}
+	else {
+		Controller.getTabularMetric(rule.index, granularity, startTime, endTime, function(data) {
+			processMetric(data, callback);
 		}, error);
+
+	}
 
 }
 

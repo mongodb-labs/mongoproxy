@@ -14,15 +14,26 @@ var GraphPanel = require('./sections/graphPanel');
 var addLabelToRules = require('./utils/addLabelToRules');
 addLabelToRules(window.config.Rules);
 
-// initialize the application. Currently starts up a single graph panel.
-var App = React.createClass({
-	render: function() {
-		return <div>
+var populateRuleValues = require('./utils/populateRuleValues');
+
+populateRuleValues(function(err) {
+	if (err) {
+		console.log(err);
+	}
+
+	console.log(window.config.Rules)
+
+	// initialize the application. Currently starts up a single graph panel.
+	var App = React.createClass({
+		render: function() {
+			return <div>
 			<div className="container">
 				<GraphPanel panelID='panel' rules={window.config.Rules}/>
 			</div>
 		</div>;
-	}
-})
+		}
+	})
 
-React.render(<App />, document.getElementById("app"));
+	React.render(<App />, document.getElementById("app"));
+
+})

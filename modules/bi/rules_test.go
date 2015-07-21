@@ -199,9 +199,10 @@ func TestCreateSingleUpdate(t *testing.T) {
 			Multi:    false,
 		}
 
-		actual, err := createSingleUpdate(inputDoc, t1, granularity, rule)
+		actual, meta, err := createSingleUpdate(inputDoc, t1, granularity, rule)
 
 		So(err, ShouldBeNil)
+		So(meta, ShouldBeNil)
 		So(actual, ShouldResemble, expected)
 	})
 	Convey("Fail to create a single update request object", t, func() {
@@ -213,7 +214,7 @@ func TestCreateSingleUpdate(t *testing.T) {
 				ValueField: "price",
 			}
 
-			_, err := createSingleUpdate(inputDoc, t1, granularity, rule)
+			_, _, err := createSingleUpdate(inputDoc, t1, granularity, rule)
 
 			So(err, ShouldNotBeNil)
 		})
@@ -225,7 +226,7 @@ func TestCreateSingleUpdate(t *testing.T) {
 				ValueField: "price",
 			}
 
-			_, err := createSingleUpdate(inputDoc, t1, granularity, rule)
+			_, _, err := createSingleUpdate(inputDoc, t1, granularity, rule)
 
 			So(err, ShouldNotBeNil)
 
@@ -238,7 +239,7 @@ func TestCreateSingleUpdate(t *testing.T) {
 				ValueField: "price",
 			}
 
-			_, err := createSingleUpdate(inputDoc, t1, granularity, rule)
+			_, _, err := createSingleUpdate(inputDoc, t1, granularity, rule)
 
 			So(err, ShouldNotBeNil)
 		})

@@ -45,7 +45,7 @@ func createSelector(t time.Time, granularity string, valueField string) (bson.D,
 		return nil, err
 	}
 
-	doc := bson.D{{"start", start}, {"valueField", valueField}}
+	doc := bson.D{{"start", start}, {"valueField", valueField}, {"value", bson.D{{"$exists", false}}}}
 
 	return doc, nil
 }
@@ -88,30 +88,65 @@ func createUpdate(t time.Time, granularity string, value float64) (bson.D, error
 
 }
 
+func createSelectorString(t time.Time, granularity string, valueField string,
+	value string) (bson.D, error) {
+	start, err := GetStartTime(t, granularity)
+	if err != nil {
+		return nil, err
+	}
+
+	doc := bson.D{{"start", start}, {"valueField", valueField}, {"value", value}, {"single", true}}
+
+	return doc, nil
+}
+
 func createSingleUpdate(doc bson.D, time time.Time, granularity string,
-	rule Rule) (*messages.SingleUpdate, error) {
+	rule Rule) (*messages.SingleUpdate, *messages.SingleUpdate, error) {
+
+	valueRaw := bsonutil.FindValueByKey(rule.ValueField, doc)
+	if valueRaw == nil {
+		return nil, nil, fmt.Errorf("No value found")
+	}
+
+	valueStr, ok := valueRaw.(string)
+	if ok {
+		// it's a string
+		selectorStr, err := createSelectorString(time, granularity, rule.ValueField, valueStr)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Error creating selector: %v", err)
+		}
+		updateStr, err := createUpdate(time, granularity, 1)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Error creating update: %v", err)
+		}
+
+		single := messages.SingleUpdate{
+			Upsert:   true,
+			Selector: selectorStr,
+			Update:   updateStr,
+		}
+		meta := saveMetadataForValue(rule, granularity, valueStr)
+
+		return &single, &meta, nil
+	}
+
+	// otherwise, it's a float.
+	valueFloat := convert.ToFloat64(valueRaw, 0)
+	if valueFloat == 0 {
+		return nil, nil, fmt.Errorf("No need to continue, value is 0")
+	}
 
 	selectorRaw, err := createSelector(time, granularity, rule.ValueField)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error creating selector: %v", err)
-	}
-
-	valueRaw := bsonutil.FindValueByKey(rule.ValueField, doc)
-	if valueRaw == nil {
-		return nil, fmt.Errorf("No value found: %v", err)
-	}
-
-	value := convert.ToFloat64(valueRaw)
-	if value == 0 {
-		return nil, fmt.Errorf("No need to continue, value is 0: %v", err)
+		return nil, nil, fmt.Errorf("Error creating selector: %v", err)
 	}
 
 	// TODO: actually grab the value
-	updateRaw, err := createUpdate(time, granularity, value)
+	updateRaw, err := createUpdate(time, granularity, valueFloat)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error creating update: %v", err)
+		return nil, nil, fmt.Errorf("Error creating update: %v", err)
 	}
 
 	single := messages.SingleUpdate{
@@ -120,5 +155,5 @@ func createSingleUpdate(doc bson.D, time time.Time, granularity string,
 		Update:   updateRaw,
 	}
 
-	return &single, nil
+	return &single, nil, nil
 }

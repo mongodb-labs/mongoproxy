@@ -220,12 +220,15 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 				for k := 0; k < len(opi.Documents); k++ {
 
 					doc := opi.Documents[k]
-					single, err := createSingleUpdate(doc, time, granularity, rule)
+					single, meta, err := createSingleUpdate(doc, time, granularity, rule)
 					if err != nil {
 						continue
 					}
 
 					update.Updates = append(update.Updates, *single)
+					if meta != nil {
+						update.Updates = append(update.Updates, *meta)
+					}
 
 				}
 				updates = append(updates, update)

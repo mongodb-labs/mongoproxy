@@ -17,10 +17,9 @@ import (
 var biModule *bi.BIModule
 var biConfig bson.M
 
-// mongosession is a persistent session to the MongoDB database to query
+// mongoSession is a persistent session to the MongoDB database to query
 // metrics for the frontend
 var mongoSession *mgo.Session
-var configSession *mgo.Session
 
 // metricParam contains the parameters from the URL GET request for metrics.
 type metricParam struct {
@@ -35,6 +34,9 @@ type metricParam struct {
 
 	// the end time queried for in the request
 	End time.Time
+
+	// the value to query for in the request
+	Value *string
 }
 
 const timeLayout = "2006-01-02 15:04:05"
@@ -125,8 +127,14 @@ func parseMetricParams(c *gin.Context) (*metricParam, error) {
 		return nil, fmt.Errorf("Invalid end time: %v", c.Param("end"))
 	}
 
+	var value *string
+	valueRaw := c.Param("value")
+	if len(valueRaw) > 0 {
+		value = &valueRaw
+	}
+
 	return &metricParam{
-		ruleIndex, granularity, start, end,
+		ruleIndex, granularity, start, end, value,
 	}, nil
 }
 
@@ -150,8 +158,9 @@ func getMetric(c *gin.Context) {
 		return
 	}
 
+	// TODO: Allow string value comparisons as well!
 	docs, err := getDataOverRange(mongoSession, biModule.Rules[params.RuleIndex],
-		params.Granularity, params.Start, params.End)
+		params.Granularity, params.Start, params.End, params.Value)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err,
@@ -194,7 +203,7 @@ func getTabularMetric(c *gin.Context) {
 	}
 
 	input, err := getDataOverRange(mongoSession, biModule.Rules[params.RuleIndex],
-		params.Granularity, params.Start, params.End)
+		params.Granularity, params.Start, params.End, params.Value)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err,
@@ -300,6 +309,52 @@ func postConfig(c *gin.Context) {
 	}
 }
 
+func getMetadata(c *gin.Context) {
+	ruleIndex, err := strconv.ParseInt(c.Param("ruleIndex"), 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err,
+		})
+		return
+	}
+	if ruleIndex < 0 || ruleIndex >= int64(len(biModule.Rules)) {
+		c.JSON(400, gin.H{
+			"error": "Rule out of bounds.",
+		})
+		return
+	}
+
+	granularity := c.Param("granularity")
+
+	rule := biModule.Rules[ruleIndex]
+	meta, err := getMetadataForRule(mongoSession, rule, granularity)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	Log(NOTICE, "%#v", meta)
+
+	possibleVals := make([]string, 0)
+	metaField := convert.ToBSONMap(meta[rule.ValueField])
+	for value, existsRaw := range metaField {
+		exists, ok := existsRaw.(bool)
+		if !ok {
+			continue
+		}
+		if exists {
+			possibleVals = append(possibleVals, value)
+		}
+	}
+
+	c.JSON(200, gin.H{
+		"values": possibleVals,
+	})
+
+}
+
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
@@ -324,7 +379,10 @@ func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
 	r.GET("/config", getConfig)
 	r.POST("/config", postConfig)
 	r.GET("/data/:ruleIndex/:granularity/:start/:end", getMetric)
+	r.GET("/data/:ruleIndex/:granularity/:start/:end/:value", getMetric)
 	r.GET("/tabular/:ruleIndex/:granularity/:start/:end", getTabularMetric)
+	r.GET("/tabular/:ruleIndex/:granularity/:start/:end/:value", getTabularMetric)
+	r.GET("/metadata/:ruleIndex/:granularity", getMetadata)
 
 	r.Static("/public", baseDir+"/public")
 	return r

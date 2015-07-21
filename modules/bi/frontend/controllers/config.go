@@ -20,10 +20,12 @@ func SetConfigSaveLocation(c *ConfigLocation) {
 
 func updateConfiguration(config bson.M) error {
 
+	sessionCopy := configSaveLocation.Session.Copy()
+	defer sessionCopy.Close()
 	if configSaveLocation == nil {
 		return fmt.Errorf("No configuration save location.")
 	}
-	c := configSaveLocation.Session.DB(configSaveLocation.Database).C(configSaveLocation.Collection)
+	c := sessionCopy.DB(configSaveLocation.Database).C(configSaveLocation.Collection)
 	return c.Update(bson.M{"modules.name": "bi"},
 		bson.M{"$set": bson.M{"modules.$.config": config}},
 	)

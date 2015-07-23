@@ -41,7 +41,8 @@ var ConnectionConfig = React.createClass({
 		return <Panel>
 			<h2>Connection</h2>
 			<hr />
-			<JSONEditor onChange={this.handleChange} value={ this.state.connection } settings={ settings }/>
+			<JSONEditor onChange={this.handleChange} value={ this.state.connection } 
+				settings={ settings }/>
 		</Panel>
 	}
 })

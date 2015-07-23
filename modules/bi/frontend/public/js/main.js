@@ -21,8 +21,6 @@ populateRuleValues(function(err) {
 		console.log(err);
 	}
 
-	console.log(window.config.Rules)
-
 	// initialize the application. Currently starts up a single graph panel.
 	var App = React.createClass({
 		render: function() {

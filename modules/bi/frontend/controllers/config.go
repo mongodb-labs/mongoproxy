@@ -14,10 +14,14 @@ type ConfigLocation struct {
 
 var configSaveLocation *ConfigLocation
 
+// SetConfigSaveLocation takes a driver session, a database and a collection to determine where the
+// configuration of the BI module is stored.
 func SetConfigSaveLocation(c *ConfigLocation) {
 	configSaveLocation = c
 }
 
+// helper function to update the BI module's configuration. Assumes that the frontend
+// was started with a configuration in a mongod instance, not a file.
 func updateConfiguration(config bson.M) error {
 
 	sessionCopy := configSaveLocation.Session.Copy()

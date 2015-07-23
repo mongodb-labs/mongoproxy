@@ -43,7 +43,8 @@ var App = React.createClass({
 		for (var i = 0; i < window.config.rules.length; i++) {
 			
 			r.push(
-				<RuleConfig onChange={this.handleRuleChange} onClick={this.handleRemoveRule} key={i} keyIndex={i} rule={window.config.rules[i]} />
+				<RuleConfig onChange={this.handleRuleChange} onClick={this.handleRemoveRule} 
+					key={i} keyIndex={i} rule={window.config.rules[i]} />
 			)
 		}	
 		this.setState({
@@ -68,12 +69,12 @@ var App = React.createClass({
 			configuration: newConfig
 		})
 
-		console.log(this.state.configuration)
 	},
 	addRule: function() {
 		var r = this.state.rulePanels;
 		r.push(
-			<RuleConfig onChange={this.handleRuleChange} onClick={this.handleRemoveRule} key={this.state.key} rule={{}} keyIndex={this.state.key}/>
+			<RuleConfig onChange={this.handleRuleChange} onClick={this.handleRemoveRule} 
+				key={this.state.key} rule={{}} keyIndex={this.state.key}/>
 		)
 		this.setState({
 			rulePanels: r,
@@ -98,7 +99,6 @@ var App = React.createClass({
 			configuration: _.extend(this.state.configuration, newConfig)
 		});
 
-		console.log(this.state.configuration)
 	},
 
 	// update the state whenever the connection information changes
@@ -110,7 +110,6 @@ var App = React.createClass({
 			configuration: _.extend(this.state.configuration, newConfig)
 		});
 
-		console.log(this.state.configuration)
 	},
 
 	handleSaveConfig: function() {
@@ -130,7 +129,8 @@ var App = React.createClass({
 	render: function() {
 		return <div>
 			<div className="container">
-				<Button onClick={this.handleSaveConfig} block bsStyle="primary" bsSize="large">Save Configuration</Button>
+				<Button onClick={this.handleSaveConfig} block bsStyle="primary" 
+					bsSize="large">Save Configuration</Button>
 				<ConnectionConfig onChange={this.handleConnectionChange} />
 				<Panel>
 					<h2>Rules</h2>

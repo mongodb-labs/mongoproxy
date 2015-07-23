@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/mongodbinc-interns/mongoproxy"
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
@@ -12,7 +12,6 @@ import (
 	_ "github.com/mongodbinc-interns/mongoproxy/server/config"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"io/ioutil"
 )
 
 var (
@@ -44,39 +43,33 @@ func main() {
 	// Currently, it will take the configuration of the first BI module found in the chain.
 	var result bson.M
 	var configLocation *controllers.ConfigLocation
+	var err error
 	if len(configFilename) == 0 {
+		result, err = mongoproxy.ParseConfigFromDB(mongoURI, configNamespace)
 		mongoSession, err := mgo.Dial(mongoURI)
-		if err != nil {
-			Log(ERROR, "Error connecting to MongoDB instance: %#v\n", err)
-			return
+
+		if err == nil {
+			database, collection, err := messages.ParseNamespace(configNamespace)
+			if err == nil {
+				configLocation = &controllers.ConfigLocation{
+					Session:    mongoSession,
+					Database:   database,
+					Collection: collection,
+				}
+			} else {
+				Log(WARNING, "Invalid namespace for configuration location.")
+			}
+
+		} else {
+			Log(WARNING, "Unable to find configuration location.")
 		}
 
-		database, collection, err := messages.ParseNamespace(configNamespace)
-		if err != nil {
-			Log(ERROR, "Invalid namespace: %#v\n", err)
-			return
-		}
-
-		err = mongoSession.DB(database).C(collection).Find(bson.M{}).One(&result)
-		if err != nil {
-			Log(WARNING, "Error querying MongoDB for configuration: %#v\n", err)
-		}
-		configLocation = &controllers.ConfigLocation{
-			Session:    mongoSession,
-			Database:   database,
-			Collection: collection,
-		}
 	} else {
-		file, err := ioutil.ReadFile(configFilename)
-		if err != nil {
-			Log(ERROR, "Error reading configuration file: %#v\n", err)
-			return
-		}
+		result, err = mongoproxy.ParseConfigFromFile(configFilename)
+	}
 
-		json.Unmarshal(file, &result)
-		if result == nil {
-			Log(ERROR, "Invalid JSON configuration")
-		}
+	if err != nil {
+		Log(WARNING, "%v", err)
 	}
 
 	modules, err := convert.ConvertToBSONMapSlice(result["modules"])
@@ -99,6 +92,10 @@ func main() {
 	if moduleConfig == nil {
 		Log(WARNING, "No BI module found in configuration")
 	}
-	r := frontend.Start(moduleConfig, "modules/bi/frontend", configLocation)
+	r, err := frontend.Start(moduleConfig, "modules/bi/frontend", configLocation)
+	if err != nil {
+		Log(ERROR, "Error starting frontend: %#v", err)
+		return
+	}
 	r.Run(fmt.Sprintf(":%v", port))
 }

@@ -107,7 +107,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		var err error
 		mongoSession, err = mgo.DialWithInfo(&m.Connection)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(ERROR, "Error connecting to MongoDB: %#v", err)
 			next(req, res)
 			return
 		}
@@ -118,7 +118,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.CommandType:
 		command, err := messages.ToCommandRequest(req)
 		if err != nil {
-			Log(WARNING, "Error converting to command: %#v\n", err)
+			Log(WARNING, "Error converting to command: %#v", err)
 			next(req, res)
 			return
 		}
@@ -154,7 +154,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.FindType:
 		f, err := messages.ToFindRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(WARNING, "Error converting to a Find command: %#v", err)
 			next(req, res)
 			return
 		}
@@ -179,7 +179,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 				if !ok {
 					err = iter.Err()
 					if err != nil {
-						Log(ERROR, "Error on Find Command: %#v\n", err)
+						Log(WARNING, "Error on Find Command: %#v", err)
 
 						// log an error if we can
 						qErr, ok := err.(*mgo.QueryError)
@@ -202,7 +202,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 			// dump all of them
 			err = iter.All(&results)
 			if err != nil {
-				Log(ERROR, "Error on Find Command: %#v\n", err)
+				Log(WARNING, "Error on Find Command: %#v", err)
 
 				// log an error if we can
 				qErr, ok := err.(*mgo.QueryError)
@@ -226,7 +226,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.InsertType:
 		insert, err := messages.ToInsertRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(WARNING, "Error converting to Insert command: %#v", err)
 			next(req, res)
 			return
 		}
@@ -267,7 +267,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.UpdateType:
 		u, err := messages.ToUpdateRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(WARNING, "Error converting to Update command: %#v", err)
 			next(req, res)
 			return
 		}
@@ -318,7 +318,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.DeleteType:
 		d, err := messages.ToDeleteRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(WARNING, "Error converting to Delete command: %#v", err)
 			next(req, res)
 			return
 		}
@@ -353,18 +353,18 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		Log(NOTICE, "Reply: %#v\n", reply)
+		Log(INFO, "Reply: %#v", reply)
 
 		res.Write(response)
 
 	case messages.GetMoreType:
 		g, err := messages.ToGetMoreRequest(req)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(WARNING, "Error converting to GetMore command: %#v", err)
 			next(req, res)
 			return
 		}
-		Log(DEBUG, "%#v\n", g)
+		Log(DEBUG, "%#v", g)
 
 		// make an iterable to get more
 		c := mongoSession.DB(g.Database).C(g.Collection)
@@ -381,7 +381,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 			if !ok {
 				err = iter.Err()
 				if err != nil {
-					Log(ERROR, "Error on GetMore Command: %#v\n", err)
+					Log(WARNING, "Error on GetMore Command: %#v", err)
 
 					if err == mgo.ErrCursor {
 						// we return an empty getMore with an errored out
@@ -423,7 +423,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		res.Write(response)
 	default:
-		Log(ERROR, "Unsupported operation: %v", req.Type())
+		Log(WARNING, "Unsupported operation: %v", req.Type())
 	}
 
 	next(req, res)

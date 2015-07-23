@@ -69,7 +69,8 @@ var RuleConfig = React.createClass({
 	},
 	render: function() {
 		return <Panel>
-			<JSONEditor onChange={this.handleChange} value={ this.state.rule } settings={ this.state.settings }/>
+			<JSONEditor onChange={this.handleChange} value={ this.state.rule } 
+				settings={ this.state.settings }/>
 			<hr />
 			<Button bsStyle='danger' onClick={this.handleClick} >Delete Rule</Button>
 		</Panel>

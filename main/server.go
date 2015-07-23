@@ -1,14 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"github.com/mongodbinc-interns/mongoproxy"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"io/ioutil"
 )
 
 var (
@@ -38,35 +34,15 @@ func main() {
 
 	// grab config file
 	var result bson.M
+	var err error
 	if len(configFilename) == 0 {
-		mongoSession, err := mgo.Dial(mongoURI)
-		if err != nil {
-			Log(ERROR, "Error connecting to MongoDB instance: %#v\n", err)
-			return
-		}
-
-		database, collection, err := messages.ParseNamespace(configNamespace)
-		if err != nil {
-			Log(ERROR, "Invalid namespace: %#v\n", err)
-			return
-		}
-
-		err = mongoSession.DB(database).C(collection).Find(bson.M{}).One(&result)
-		if err != nil {
-			Log(ERROR, "Error querying MongoDB for configuration: %#v\n", err)
-			return
-		}
+		result, err = mongoproxy.ParseConfigFromDB(mongoURI, configNamespace)
 	} else {
-		file, err := ioutil.ReadFile(configFilename)
-		if err != nil {
-			Log(ERROR, "Error reading configuration file: %#v\n", err)
-			return
-		}
+		result, err = mongoproxy.ParseConfigFromFile(configFilename)
+	}
 
-		json.Unmarshal(file, &result)
-		if result == nil {
-			Log(ERROR, "Invalid JSON configuration")
-		}
+	if err != nil {
+		Log(WARNING, "%v", err)
 	}
 
 	mongoproxy.StartWithConfig(port, result)

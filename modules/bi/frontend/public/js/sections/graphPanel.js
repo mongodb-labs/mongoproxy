@@ -22,7 +22,6 @@ function setChart(graphPanel, unload) {
 	async.forEachOf(graphPanel.state.rules, function(rule, key, callback) {
 
 		var label = rule.label;
-		console.log(rule);
 		getCurrentMetric(rule, graphPanel.state.granularity, function(data) {
 			// label for the time axis
 			if (!graphData.length) {
@@ -35,7 +34,6 @@ function setChart(graphPanel, unload) {
 			gData.unshift(label)
 
 			graphData.push(gData)
-			console.log(graphData);
 			callback();
 		}, function(error) {
 			callback(error);
@@ -122,7 +120,9 @@ var GraphPanel = React.createClass({
 		return (
 			<Panel>
 				<RuleSelector onChange={this.handleRuleChange} rules={this.props.rules}/>
-				<GranularityToggle onChange={this.handleGranularityToggle} panelID={this.props.panelID} ref="timeToggle" granularities={this.state.timeGranularities}/>
+				<GranularityToggle onChange={this.handleGranularityToggle} 
+					panelID={this.props.panelID} ref="timeToggle" 
+					granularities={this.state.timeGranularities}/>
 				<TimeseriesChart ref="chart" data={this.state.data} panelID={this.props.panelID}/>
 			</Panel>
 		)

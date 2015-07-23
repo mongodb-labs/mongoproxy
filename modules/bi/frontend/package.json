@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf public/js/build",
-    "start": "npm run build && cd ../../../ && ./start_frontend.sh",
+    "start": "cd ../../../ && ./start_frontend.sh",
     "serve": "cd ../../../ && ./set_gopath.sh && go run main/frontend.go",
     "build:css": "mkdir -p public/build && ./node_modules/.bin/lessc ./public/css/main.less > ./public/build/main.css",
     "build:js": "mkdir -p public/build && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/main.js > ./public/build/main.js && ./node_modules/.bin/browserify -t [ reactify --es6 ] ./public/js/config.js > ./public/build/config.js",

@@ -23,6 +23,45 @@ var getProperGranularity = function(granularity) {
 	}
 }
 
+// helper function to round a time to the nearest value of its granularity, 
+// up or down depending on the lower granularity's value.
+var roundToGranularity = function(time, granularity) {
+	switch (granularity) {
+		case "M":
+			if (time.date() >= 15) {
+				return time.add(1, "month").startOf("month")
+			}
+			return time.startOf("month")
+			break;
+		case "D":
+			if (time.hour() >= 12) {
+				return time.add(1, "day").startOf("day")
+			}
+			return time.startOf("day")
+			break;
+		case "h":
+			if (time.minute() >= 30) {
+				return time.add(1, "hour").startOf("hour")
+			}
+			return time.startOf("hour")
+			break;
+		case "m":
+			if (time.second() >= 30) {
+				return time.add(1, "minute").startOf("minute")
+			}
+			return time.startOf("minute")
+			break;
+		case "s":
+			if (time.millisecond() >= 500) {
+				return time.add(1, "second").startOf("second")
+			}
+			return time.startOf("second")
+			break;
+		default:
+			return time
+	}
+}
+
 // helper function to get the next higher time scale for moment.JS given a time granularity.
 var getHigherGranularity = function(granularity) {
 	switch (granularity) {
@@ -87,6 +126,7 @@ var getNumInNextGranularity = function(granularity, time) {
 
 module.exports = {
 	getNumInNextGranularity: getNumInNextGranularity,
+	roundToGranularity: roundToGranularity,
 	getHigherGranularity: getHigherGranularity,
 	getProperGranularity: getProperGranularity
 };

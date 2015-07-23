@@ -5,6 +5,8 @@ var _ = require('lodash');
 
 var newRules = [];
 
+// helper function to inject additional labels and rules for all the values
+// of the given rules, so they can be displayed on the graph.
 function populateRuleValues(cb) {
 
 	async.forEachOfSeries(window.config.Rules, function(rule, i, callback) {

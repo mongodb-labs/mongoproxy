@@ -12,7 +12,8 @@ type Module interface {
 	// Name returns the name to identify this module when registered.
 	Name() string
 
-	// Configure configures this module with the given configuration object.
+	// Configure configures this module with the given configuration object. Returns
+	// an error if the configuration is invalid for the module.
 	Configure(bson.M) error
 
 	// Process is the function executed when a message is called in the pipeline.
@@ -21,6 +22,6 @@ type Module interface {
 	// be called to execute the next module in the pipeline.
 	Process(messages.Requester, messages.Responder, PipelineFunc)
 
-	// New creates a new instance of this module
+	// New creates a new instance of this module.
 	New() Module
 }

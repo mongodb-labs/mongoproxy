@@ -27,7 +27,7 @@ module.exports = {
 		// TODO: Find a better way to reference rules rather than with index. Currently, rules
 		// do not have a unique ID, so the easiest way to get the unique identifier is with their
 		// position in the array.
-		
+
 		$.ajax('/tabular/' + i + '/' + timeGranularity + '/' + startTime.toISOString() + '/' +
 			endTime.toISOString() + '/' + value, {
 				success: callback,
@@ -35,6 +35,8 @@ module.exports = {
 			})
 	},
 
+	// AJAX request to retrieve metadata for a rule index and a time granularity. 
+	// The callback is called on success, and error is called on error.
 	getMetadata: function(i, timeGranularity, callback, error) {
 		$.ajax('/metadata/' + i + '/' + timeGranularity, {
 				success: callback,
@@ -43,6 +45,7 @@ module.exports = {
 	},
 
 	// AJAX request to save a configuration document.
+	// The callback is called on success, and error is called on error.
 	postConfiguration: function(configJSON, callback, error) {
 		$.ajax({
 			type: "POST",

@@ -26,7 +26,8 @@ var TimeseriesChart = React.createClass({
                 x: {
                     type: 'timeseries',
                     tick: {
-                        format: "%Y-%m-%d %H:%M:%S", // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+                        // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+                        format: "%Y-%m-%d %H:%M:%S", 
                         count: 5,
                     },
 

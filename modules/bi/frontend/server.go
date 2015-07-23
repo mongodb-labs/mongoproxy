@@ -20,7 +20,7 @@ var funcMap = template.FuncMap{
 }
 
 // Start initializes a new server for the BI Module Frontend.
-func Start(config bson.M, baseDir string, configLocation *controllers.ConfigLocation) *gin.Engine {
+func Start(config bson.M, baseDir string, configLocation *controllers.ConfigLocation) (*gin.Engine, error) {
 	r := gin.New()
 
 	// set up views
@@ -29,12 +29,15 @@ func Start(config bson.M, baseDir string, configLocation *controllers.ConfigLoca
 	if tmpl, err := template.New("projectViews").Funcs(funcMap).ParseGlob(baseDir + "/views/*"); err == nil {
 		r.SetHTMLTemplate(tmpl)
 	} else {
-		panic(err)
+		return nil, err
 	}
 
 	// set up routes
 	controllers.SetConfigSaveLocation(configLocation)
-	controllers.Setup(r, config, baseDir)
+	err := controllers.Setup(r, config, baseDir)
+	if err != nil {
+		return nil, err
+	}
 
-	return r
+	return r, nil
 }

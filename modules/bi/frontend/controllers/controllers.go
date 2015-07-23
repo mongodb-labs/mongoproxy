@@ -18,7 +18,7 @@ var biModule *bi.BIModule
 var biConfig bson.M
 
 // mongoSession is a persistent session to the MongoDB database to query
-// metrics for the frontend
+// metrics for the frontend.
 var mongoSession *mgo.Session
 
 // metricParam contains the parameters from the URL GET request for metrics.
@@ -65,7 +65,8 @@ func getRangeInGranularities(startTime time.Time, endTime time.Time,
 	rDuration := endTime.Sub(startTime)
 	switch granularity {
 	case bi.Monthly:
-		// we assume 30 days in a month for now.
+		// TODO: account for different months. Currently assumes that all months
+		// have 30 days.
 		hours := convert.ToInt(rDuration.Hours())
 		days := int(hours) / 24
 		r = days / 30
@@ -181,9 +182,6 @@ func getTabularMetric(c *gin.Context) {
 		return
 	}
 
-	// TODO: the day and month graphs are offset from the hour, minute, and second
-	// ones, in which they are off from each other by 1 time granularity. Find some
-	// way to fix it.
 	params.Start, _ = bi.GetRoundedTime(params.Start, params.Granularity)
 
 	r, err := getRangeInGranularities(params.Start, params.End, params.Granularity)
@@ -309,6 +307,8 @@ func postConfig(c *gin.Context) {
 	}
 }
 
+// getMetadata returns the metadata for a particular rule at a time granularity, where
+// metadata contains a list of possible string values for that rule.
 func getMetadata(c *gin.Context) {
 	ruleIndex, err := strconv.ParseInt(c.Param("ruleIndex"), 10, 64)
 	if err != nil {
@@ -358,7 +358,7 @@ func getMetadata(c *gin.Context) {
 // Setup sets up the routes for the frontend server, taking in an Engine
 // and a BI Module for initialization, and returns the same Engine with the
 // routes added for chaining purposes.
-func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
+func Setup(r *gin.Engine, config bson.M, baseDir string) error {
 	biModule = &bi.BIModule{}
 	biConfig = config
 
@@ -370,7 +370,7 @@ func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
 		mongoSession, err = mgo.DialWithInfo(&biModule.Connection)
 		if err != nil {
 			Log(ERROR, "%#v\n", err)
-			return r
+			return err
 		}
 
 	}
@@ -385,5 +385,5 @@ func Setup(r *gin.Engine, config bson.M, baseDir string) *gin.Engine {
 	r.GET("/metadata/:ruleIndex/:granularity", getMetadata)
 
 	r.Static("/public", baseDir+"/public")
-	return r
+	return nil
 }

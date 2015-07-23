@@ -36,7 +36,7 @@ type Rule struct {
 	ValueField string
 
 	// An optional time for when the request was saved.
-	TimeField *time.Time
+	TimeField *string
 }
 
 func createSelector(t time.Time, granularity string, valueField string) (bson.D, error) {
@@ -100,6 +100,8 @@ func createSelectorString(t time.Time, granularity string, valueField string,
 	return doc, nil
 }
 
+// helper function to create the upsert command for a single document matching a single
+// rule at a single time granularity.
 func createSingleUpdate(doc bson.D, time time.Time, granularity string,
 	rule Rule) (*messages.SingleUpdate, *messages.SingleUpdate, error) {
 

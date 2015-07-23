@@ -4,6 +4,7 @@ package bi
 
 import (
 	"fmt"
+	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/messages"
@@ -132,20 +133,13 @@ func (b *BIModule) Configure(conf bson.M) error {
 			TimeGranularities: timeGranularities,
 			ValueField:        valueField,
 		}
-		timeField, ok := r["timeField"].(time.Time)
+		timeFieldRaw, ok := r["timeField"].(string)
 		if ok {
-			rule.TimeField = &timeField
-		} else {
-			timeFieldRaw, ok := r["timeField"].(string)
-			if ok {
-				if len(timeFieldRaw) > 0 {
-					err := timeField.UnmarshalText([]byte(timeFieldRaw))
-					if err != nil {
-						rule.TimeField = &timeField
-					}
-				}
+			if len(timeFieldRaw) > 0 {
+				rule.TimeField = &timeFieldRaw
 
 			}
+
 		}
 
 		b.Rules = append(b.Rules, rule)
@@ -187,12 +181,7 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 		for i := 0; i < len(b.Rules); i++ {
 			rule := b.Rules[i]
 
-			time := time.Now()
-
-			// use the time field instead if it exists
-			if rule.TimeField != nil {
-				time = *rule.TimeField
-			}
+			t := time.Now()
 
 			// if the message matches the aggregation, create an upsert
 			// and pass it on to mongod
@@ -203,6 +192,7 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 				continue
 			}
 
+			// each time granularity needs a separate update
 			for j := 0; j < len(rule.TimeGranularities); j++ {
 				granularity := rule.TimeGranularities[j]
 				suffix, err := GetSuffix(granularity)
@@ -211,27 +201,50 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 					continue
 				}
 
-				update := messages.Update{
-					Database:   rule.PrefixDatabase,
-					Collection: rule.PrefixCollection + suffix,
-					Ordered:    false,
-				}
-
 				for k := 0; k < len(opi.Documents); k++ {
 
+					update := messages.Update{
+						Database:   rule.PrefixDatabase,
+						Collection: rule.PrefixCollection + suffix,
+						Ordered:    false,
+					}
+
 					doc := opi.Documents[k]
-					single, meta, err := createSingleUpdate(doc, time, granularity, rule)
+					// use the time field instead if it exists
+					if rule.TimeField != nil {
+						tRaw := bsonutil.FindValueByKey(*rule.TimeField, doc)
+						timeField, ok := tRaw.(time.Time)
+						if ok {
+							t = timeField
+						} else {
+							timeFieldRaw, ok := tRaw.(string)
+							if ok {
+								err := timeField.UnmarshalText([]byte(timeFieldRaw))
+								if err == nil {
+									t = timeField
+								}
+
+							}
+						}
+
+					}
+					Log(WARNING, "%v", t)
+					single, meta, err := createSingleUpdate(doc, t, granularity, rule)
 					if err != nil {
 						continue
 					}
 
 					update.Updates = append(update.Updates, *single)
+
+					// upsert the metadata if needed
 					if meta != nil {
 						update.Updates = append(update.Updates, *meta)
 					}
 
+					updates = append(updates, update)
+
 				}
-				updates = append(updates, update)
+
 			}
 		}
 

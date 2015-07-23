@@ -44,12 +44,7 @@ func getDataOverRange(session *mgo.Session, rule bi.Rule, granularity string,
 
 	var results []bson.M
 
-	err = iter.All(&results)
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
+	return results, iter.All(&results)
 }
 
 // getMetadataForRule is a helper function that queries the MongoDB database for
@@ -69,10 +64,5 @@ func getMetadataForRule(session *mgo.Session, rule bi.Rule, granularity string) 
 		"_id": "metadata",
 	}
 	var result bson.M
-	err = c.Find(query).One(&result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return result, c.Find(query).One(&result)
 }

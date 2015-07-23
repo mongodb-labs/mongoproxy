@@ -228,7 +228,7 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 						}
 
 					}
-					Log(WARNING, "%v", t)
+
 					single, meta, err := createSingleUpdate(doc, t, granularity, rule)
 					if err != nil {
 						continue

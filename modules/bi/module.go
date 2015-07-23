@@ -18,11 +18,10 @@ import (
 // data from inserts that successfully traveled the pipeline. The requests it analyzes
 // and the metrics it aggregates is based upon its rules.
 type BIModule struct {
-	Rules      []Rule
-	Connection mgo.DialInfo
+	Rules        []Rule
+	Connection   mgo.DialInfo
+	mongoSession *mgo.Session
 }
-
-var mongoSession *mgo.Session
 
 func init() {
 	server.Publish(&BIModule{})
@@ -162,15 +161,18 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 	}
 
 	// spin up the session if it doesn't exist
-	if mongoSession == nil {
+	if b.mongoSession == nil {
 		var err error
-		mongoSession, err = mgo.DialWithInfo(&b.Connection)
+		b.mongoSession, err = mgo.DialWithInfo(&b.Connection)
 		if err != nil {
 			Log(ERROR, "%#v\n", err)
 			return
 		}
-		mongoSession.SetPrefetch(0)
+		b.mongoSession.SetPrefetch(0)
 	}
+
+	session := b.mongoSession.Copy()
+	defer session.Close()
 
 	updates := make([]messages.Update, 0)
 
@@ -257,7 +259,7 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 
 			reply := bson.D{}
 			Log(NOTICE, "%#v", b)
-			err := mongoSession.DB(u.Database).Run(b, &reply)
+			err := session.DB(u.Database).Run(b, &reply)
 			if err != nil {
 				Log(ERROR, "Error updating database: %v", err)
 			} else {

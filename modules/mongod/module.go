@@ -19,10 +19,9 @@ import (
 // writes the response from mongod into the ResponseWriter before calling
 // the next module. It passes on requests unchanged.
 type MongodModule struct {
-	Connection mgo.DialInfo
+	Connection   mgo.DialInfo
+	mongoSession *mgo.Session
 }
-
-var mongoSession *mgo.Session
 
 func init() {
 	server.Publish(&MongodModule{})
@@ -103,16 +102,19 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
 
 	// spin up the session if it doesn't exist
-	if mongoSession == nil {
+	if m.mongoSession == nil {
 		var err error
-		mongoSession, err = mgo.DialWithInfo(&m.Connection)
+		m.mongoSession, err = mgo.DialWithInfo(&m.Connection)
 		if err != nil {
 			Log(ERROR, "Error connecting to MongoDB: %#v", err)
 			next(req, res)
 			return
 		}
-		mongoSession.SetPrefetch(0)
+		m.mongoSession.SetPrefetch(0)
 	}
+
+	session := m.mongoSession.Copy()
+	defer session.Close()
 
 	switch req.Type() {
 	case messages.CommandType:
@@ -126,13 +128,15 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := command.ToBSON()
 
 		reply := bson.M{}
-		err = mongoSession.DB(command.Database).Run(b, reply)
+		err = session.DB(command.Database).Run(b, reply)
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
-			Log(WARNING, "Error running command: %#v", err)
+			Log(WARNING, "Error running command %v: %#v", command.CommandName, err)
 			if ok {
 				res.Error(int32(qErr.Code), qErr.Message)
+			} else {
+				res.Error(-1, "Unknown error")
 			}
 			next(req, res)
 			return
@@ -159,7 +163,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 			return
 		}
 
-		c := mongoSession.DB(f.Database).C(f.Collection)
+		c := session.DB(f.Database).C(f.Collection)
 		query := c.Find(f.Filter).Batch(int(f.Limit)).Skip(int(f.Skip)).Prefetch(0)
 
 		if f.Projection != nil {
@@ -234,7 +238,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := insert.ToBSON()
 
 		reply := bson.M{}
-		err = mongoSession.DB(insert.Database).Run(b, reply)
+		err = session.DB(insert.Database).Run(b, reply)
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
@@ -275,7 +279,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := u.ToBSON()
 
 		reply := bson.D{}
-		err = mongoSession.DB(u.Database).Run(b, &reply)
+		err = session.DB(u.Database).Run(b, &reply)
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
@@ -326,7 +330,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := d.ToBSON()
 
 		reply := bson.M{}
-		err = mongoSession.DB(d.Database).Run(b, reply)
+		err = session.DB(d.Database).Run(b, reply)
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
@@ -367,9 +371,9 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		Log(DEBUG, "%#v", g)
 
 		// make an iterable to get more
-		c := mongoSession.DB(g.Database).C(g.Collection)
+		c := session.DB(g.Database).C(g.Collection)
 		batch := make([]bson.Raw, 0)
-		iter := c.NewIter(mongoSession, batch, g.CursorID, nil)
+		iter := c.NewIter(session, batch, g.CursorID, nil)
 		iter.SetBatch(int(g.BatchSize))
 
 		var results []bson.D

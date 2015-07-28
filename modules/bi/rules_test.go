@@ -238,7 +238,7 @@ func TestCreateSingleUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 		expectedMetaUpdate := &messages.SingleUpdate{
 			Selector: bson.D{{"_id", "metadata"}},
-			Update:   bson.D{{rule.ValueField, bson.D{{"foo", true}}}},
+			Update:   bson.D{{"$set", bson.D{{rule.ValueField + ".foo", true}}}},
 			Upsert:   true,
 			Multi:    false,
 		}

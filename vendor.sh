@@ -46,6 +46,7 @@ set_dependencies() {
       else
         local install_path="${GOPATH%%:*}/src/${package%%/...}"
       fi
+      rm -rf $install_path;
 
       [[ -e "$install_path/.git/index.lock" ||
          -e "$install_path/.hg/store/lock"  ||
@@ -55,14 +56,17 @@ set_dependencies() {
       go get -u -d "$package"
 
       cd $install_path
-      hg update     "$version" > /dev/null 2>&1 || \
-      git checkout  "$version" > /dev/null 2>&1 || \
-      bzr revert -r "$version" > /dev/null 2>&1 || \
-      #svn has exit status of 0 when there is no .svn
-      { [ -d .svn ] && svn update -r "$version" > /dev/null 2>&1; } || \
-      { echo ">> Failed to set $package to version $version"; exit 1; }
 
-      echo ">> Set $package to version $version"
+      if [[ -n "$version" ]] ; then
+        hg update     "$version" > /dev/null 2>&1 || \
+        git checkout  "$version" > /dev/null 2>&1 || \
+        bzr revert -r "$version" > /dev/null 2>&1 || \
+        #svn has exit status of 0 when there is no .svn
+        { [ -d .svn ] && svn update -r "$version" > /dev/null 2>&1; } || \
+        { echo ">> Failed to set $package to version $version"; exit 1; }
+        echo ">> Set $package to version $version"
+      fi
+
       if [[ -n "$dest" ]] ; then
         if [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]
         then
@@ -74,7 +78,7 @@ set_dependencies() {
         cd "$(dirname "$dest_path")"
         rm -rf $dest_path
         mv $install_path $dest_path
-        echo ">> moved $install_path to $dest_path"
+        echo ">> Moved $install_path to $dest_path"
       fi
     ) &
     pids=(${pids[@]-} $!)
@@ -85,7 +89,8 @@ set_dependencies() {
       local status=$?
       [ $status -ne 0 ] && exit $status
   done
-
+  echo ">> Removing all .git directories"
+  find ${GOPATH%%:*} -name .git -type d -prune -exec rm -rf {} \;
   echo ">> All Done"
 }
 ## /Functions

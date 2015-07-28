@@ -14,17 +14,23 @@ setgopath() {
 		ln -sf `pwd` .gopath/src/$PROXY_PKG
 		export GOPATH=`pwd`/.gopath:`pwd`/vendor
 	else
-		local SOURCE_GOPATH=`pwd`/.gopath
-		local VENDOR_GOPATH=`pwd`/vendor
-		SOURCE_GOPATH=$(cygpath -w $SOURCE_GOPATH);
-		VENDOR_GOPATH=$(cygpath -w $VENDOR_GOPATH);
+		# This is assuming the use of git bash. Cygwin might require a different
+		# configuration.
+		SOURCE_GOPATH=`pwd`/.gopath
+		VENDOR_GOPATH=`pwd`/vendor
+
 
 		# set up the $GOPATH to use the vendored dependencies as
 		# well as the source for the mongo tools
 		rm -rf .gopath/
 		mkdir -p .gopath/src/"$PROXY_PKG"
-		cp -r `pwd`/play .gopath/src/$PROXY_PKG
-		export GOPATH="$SOURCE_GOPATH;$VENDOR_GOPATH"
+
+		packages=(bsonutil buffer convert log main messages mock modules server tests)
+		for i in ${packages[@]}; do
+			cp -r `pwd`/${i} .gopath/src/$PROXY_PKG/
+		done
+		cp * .gopath/src/$PROXY_PKG/
+		export GOPATH=`pwd`/.gopath:`pwd`/vendor
 	fi;
 }
 

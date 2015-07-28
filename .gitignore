@@ -2,6 +2,7 @@
 *.exe
 *.pyc
 
+vendor/pkg
 bin/
 
 .gopath

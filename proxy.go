@@ -22,12 +22,12 @@ func ParseConfigFromFile(configFilename string) (bson.M, error) {
 
 	file, err := ioutil.ReadFile(configFilename)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading configuration file: %#v", err)
+		return nil, fmt.Errorf("Error reading configuration file: %v", err)
 	}
 
 	err = json.Unmarshal(file, &result)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid JSON Configuration: %#v", err)
+		return nil, fmt.Errorf("Invalid JSON Configuration: %v", err)
 	}
 	return result, nil
 }
@@ -42,17 +42,17 @@ func ParseConfigFromDB(mongoURI string, configNamespace string) (bson.M, error) 
 	mongoSession, err := mgo.Dial(mongoURI)
 	defer mongoSession.Close()
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to MongoDB instance: %#v", err)
+		return nil, fmt.Errorf("Error connecting to MongoDB instance: %v", err)
 	}
 
 	database, collection, err := messages.ParseNamespace(configNamespace)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid namespace: %#v", err)
+		return nil, fmt.Errorf("Invalid namespace: %v", err)
 	}
 
 	err = mongoSession.DB(database).C(collection).Find(bson.M{}).One(&result)
 	if err != nil {
-		return nil, fmt.Errorf("Error querying MongoDB for configuration: %#v", err)
+		return nil, fmt.Errorf("Error querying MongoDB for configuration: %v", err)
 	}
 
 	return result, nil
@@ -63,7 +63,7 @@ func Start(port int, chain *server.ModuleChain) {
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
-		Log(ERROR, "Error listening on port %v: %v\n", port, err)
+		Log(ERROR, "Error listening on port %v: %v", port, err)
 		return
 	}
 
@@ -72,11 +72,11 @@ func Start(port int, chain *server.ModuleChain) {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			Log(ERROR, "error accepting connection: %v\n", err)
+			Log(ERROR, "error accepting connection: %v", err)
 			continue
 		}
 
-		Log(NOTICE, "accepted connection from: %v\n", conn.RemoteAddr())
+		Log(NOTICE, "accepted connection from: %v", conn.RemoteAddr())
 		go handleConnection(conn, pipeline)
 	}
 
@@ -131,13 +131,13 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 
 		if err != nil {
 			if err != io.EOF {
-				Log(ERROR, "Decoding error: %#v", err)
+				Log(ERROR, "Decoding error: %v", err)
 			}
 			conn.Close()
 			return
 		}
 
-		Log(DEBUG, "Request: %#v\n", message)
+		Log(DEBUG, "Request: %#v", message)
 
 		res := &messages.ModuleResponse{}
 		pipeline(message, res)
@@ -152,13 +152,13 @@ func handleConnection(conn net.Conn, pipeline server.PipelineFunc) {
 			continue
 		}
 		if err != nil {
-			Log(ERROR, "Encoding error: %#v", err)
+			Log(ERROR, "Encoding error: %v", err)
 			conn.Close()
 			return
 		}
 		_, err = conn.Write(bytes)
 		if err != nil {
-			Log(ERROR, "Error writing to connection: %#v", err)
+			Log(ERROR, "Error writing to connection: %v", err)
 			conn.Close()
 			return
 		}

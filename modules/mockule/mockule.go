@@ -48,7 +48,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			break
 		}
-		Log(INFO, "%#v\n", opq)
+		Log(INFO, "%#v", opq)
 
 		// TODO: actually do something with the query
 
@@ -68,7 +68,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			break
 		}
-		Log(INFO, "%#v\n", opg)
+		Log(INFO, "%#v", opg)
 		r := messages.GetMoreResponse{}
 		if opg.CursorID == int64(100) {
 			Log(NOTICE, "Retrieved valid getMore\n")
@@ -83,7 +83,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			break
 		}
-		Log(INFO, "%#v\n", opi)
+		Log(INFO, "%#v", opi)
 
 		// insert documents into the 'database'
 		for doc := range opi.Documents {
@@ -104,7 +104,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 			break
 		}
 		r := messages.UpdateResponse{}
-		Log(INFO, "%#v\n", opu)
+		Log(INFO, "%#v", opu)
 		r.N = 5
 		r.NModified = 4
 
@@ -114,7 +114,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			break
 		}
-		Log(INFO, "%#v\n", opd)
+		Log(INFO, "%#v", opd)
 		r := messages.DeleteResponse{}
 		r.N = 1
 
@@ -124,7 +124,7 @@ func (m Mockule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			break
 		}
-		Log(INFO, "%#v\n", command)
+		Log(INFO, "%#v", command)
 
 		switch command.CommandName {
 		case "ismaster":

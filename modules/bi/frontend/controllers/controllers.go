@@ -155,7 +155,7 @@ func getMetric(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -165,7 +165,7 @@ func getMetric(c *gin.Context) {
 		params.Granularity, params.Start, params.End, params.Value)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -178,7 +178,7 @@ func getTabularMetric(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -189,7 +189,7 @@ func getTabularMetric(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -205,7 +205,7 @@ func getTabularMetric(c *gin.Context) {
 		params.Granularity, params.Start, params.End, params.Value)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -299,7 +299,7 @@ func postConfig(c *gin.Context) {
 		err := updateConfiguration(result)
 		if err != nil {
 			c.JSON(500, gin.H{
-				"error": err,
+				"error": err.Error(),
 				"ok":    0,
 			})
 		} else {
@@ -314,7 +314,7 @@ func getMetadata(c *gin.Context) {
 	ruleIndex, err := strconv.ParseInt(c.Param("ruleIndex"), 10, 64)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -331,7 +331,7 @@ func getMetadata(c *gin.Context) {
 	meta, err := getMetadataForRule(mongoSession, rule, granularity)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
@@ -369,7 +369,7 @@ func Setup(r *gin.Engine, config bson.M, baseDir string) error {
 		var err error
 		mongoSession, err = mgo.DialWithInfo(&biModule.Connection)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(ERROR, "Error connecting to MongoDB: %v", err)
 			return err
 		}
 

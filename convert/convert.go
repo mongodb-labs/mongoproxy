@@ -264,7 +264,7 @@ func ConvertToBSONMapSlice(input interface{}) ([]bson.M, error) {
 		return d, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported input for bson.M slice: %#v\n", input)
+	return nil, fmt.Errorf("Unsupported input for bson.M slice: %#v", input)
 }
 
 // ConvertToBSONDocSlice converts an []interface{} to a []bson.D slice
@@ -289,7 +289,7 @@ func ConvertToBSONDocSlice(input interface{}) ([]bson.D, error) {
 		return d, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported input for bson.D slice: %#v\n", input)
+	return nil, fmt.Errorf("Unsupported input for bson.D slice: %#v", input)
 }
 
 func ConvertToStringSlice(input interface{}) ([]string, error) {
@@ -312,5 +312,5 @@ func ConvertToStringSlice(input interface{}) ([]string, error) {
 		return d, nil
 	}
 
-	return nil, fmt.Errorf("Unsupported input for a string slice: %#v\n", input)
+	return nil, fmt.Errorf("Unsupported input for a string slice: %#v", input)
 }

@@ -132,7 +132,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		if err != nil {
 			// log an error if we can
 			qErr, ok := err.(*mgo.QueryError)
-			Log(WARNING, "Error running command %v: %#v", command.CommandName, err)
+			Log(WARNING, "Error running command %v: %v", command.CommandName, err)
 			if ok {
 				res.Error(int32(qErr.Code), qErr.Message)
 			} else {
@@ -271,7 +271,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.UpdateType:
 		u, err := messages.ToUpdateRequest(req)
 		if err != nil {
-			Log(WARNING, "Error converting to Update command: %#v", err)
+			Log(WARNING, "Error converting to Update command: %v", err)
 			next(req, res)
 			return
 		}
@@ -322,7 +322,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 	case messages.DeleteType:
 		d, err := messages.ToDeleteRequest(req)
 		if err != nil {
-			Log(WARNING, "Error converting to Delete command: %#v", err)
+			Log(WARNING, "Error converting to Delete command: %v", err)
 			next(req, res)
 			return
 		}

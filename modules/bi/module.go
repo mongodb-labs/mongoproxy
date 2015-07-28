@@ -165,7 +165,7 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 		var err error
 		b.mongoSession, err = mgo.DialWithInfo(&b.Connection)
 		if err != nil {
-			Log(ERROR, "%#v\n", err)
+			Log(ERROR, "Error connecting to MongoDB: %v", err)
 			return
 		}
 		b.mongoSession.SetPrefetch(0)

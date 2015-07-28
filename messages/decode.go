@@ -235,7 +235,7 @@ func processHeader(reader io.Reader) (MsgHeader, error) {
 	mHeader := MsgHeader{}
 	err = binary.Read(bytes.NewReader(msgHeaderBytes), binary.LittleEndian, &mHeader)
 	if err != nil {
-		Log(ERROR, "error decoding from reader: %v\n", err)
+		Log(ERROR, "error decoding from reader: %v", err)
 		return MsgHeader{}, err
 	}
 

@@ -21,11 +21,14 @@ function populateRuleValues(cb) {
 				}
 			}
 			callback();
-		}, callback)
+		}, function () {
+			// don't do anything
+			callback();
+		})
 	}, function(err) {
 		for (var i = 0; i < newRules.length; i++) {
-		newRules[i].value = i;
-	}
+			newRules[i].value = i;
+		}
 		window.config.Rules = newRules;
 		cb(err);
 	})

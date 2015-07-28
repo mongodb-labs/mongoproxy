@@ -94,7 +94,7 @@ func main() {
 	}
 	r, err := frontend.Start(moduleConfig, "modules/bi/frontend", configLocation)
 	if err != nil {
-		Log(ERROR, "Error starting frontend: %#v", err)
+		Log(ERROR, "Error starting frontend: %v", err)
 		return
 	}
 	r.Run(fmt.Sprintf(":%v", port))

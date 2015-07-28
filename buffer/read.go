@@ -22,7 +22,7 @@ func ReadDocument(reader io.Reader) (docSize int32, document bson.D, err error) 
 		return 0, nil, fmt.Errorf("docSize too small")
 	}
 	documentBuffer := make([]byte, docSize-4)
-	n, err := reader.Read(documentBuffer)
+	n, err := io.ReadAtLeast(reader, documentBuffer, int(docSize-4))
 	if err != nil && err != io.EOF {
 		return 0, nil, fmt.Errorf("error reading document: %v", err)
 	}

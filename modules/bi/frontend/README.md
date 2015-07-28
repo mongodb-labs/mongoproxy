@@ -15,5 +15,3 @@ To grab dependencies:
 To run (requires mongod to be running on localhost:27017):
 
 	npm start
-
-You can also run the application from the project directory by running the `start_frontend.sh` script.

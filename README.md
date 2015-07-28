@@ -16,7 +16,7 @@ To run:
 	chmod 755 ./start.sh # only needs to be done once
 	./start.sh <options>
 
-`start.sh` sets up the go path, and runs the `main/server.go` file. It's equivalent to teh following two commands:
+`start.sh` sets up the go path, and runs the `main/server.go` file. It's equivalent to the following two commands:
 
 	. ./set_gopath.go
 	go run main/server.go

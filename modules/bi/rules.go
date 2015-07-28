@@ -105,7 +105,8 @@ func createSelectorString(t time.Time, granularity string, valueField string,
 func createSingleUpdate(doc bson.D, time time.Time, granularity string,
 	rule Rule) (*messages.SingleUpdate, *messages.SingleUpdate, error) {
 
-	valueRaw := bsonutil.FindValueByKey(rule.ValueField, doc)
+	docMap := doc.Map()
+	valueRaw := bsonutil.FindDeepValueInMap(rule.ValueField, docMap)
 	if valueRaw == nil {
 		return nil, nil, fmt.Errorf("No value found")
 	}

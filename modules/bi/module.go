@@ -214,11 +214,13 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 					doc := opi.Documents[k]
 					// use the time field instead if it exists
 					if rule.TimeField != nil {
-						tRaw := bsonutil.FindValueByKey(*rule.TimeField, doc)
+						docMap := doc.Map()
+						tRaw := bsonutil.FindDeepValueInMap(*rule.TimeField, docMap)
 						timeField, ok := tRaw.(time.Time)
 						if ok {
 							t = timeField
 						} else {
+							// time is a string in RFC 3339 format
 							timeFieldRaw, ok := tRaw.(string)
 							if ok {
 								err := timeField.UnmarshalText([]byte(timeFieldRaw))
@@ -226,6 +228,12 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 									t = timeField
 								}
 
+							} else {
+								// time is in milliseconds from epoch
+								timeFieldInt := convert.ToInt64(tRaw, -1)
+								if timeFieldInt >= 0 {
+									t = time.Unix(0, timeFieldInt*1000*1000)
+								}
 							}
 						}
 
@@ -258,7 +266,6 @@ func (b *BIModule) Process(req messages.Requester, res messages.Responder,
 			b := u.ToBSON()
 
 			reply := bson.D{}
-			Log(NOTICE, "%#v", b)
 			err := session.DB(u.Database).Run(b, &reply)
 			if err != nil {
 				Log(ERROR, "Error updating database: %v", err)

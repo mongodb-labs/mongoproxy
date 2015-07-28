@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
 	"github.com/mongodbinc-interns/mongoproxy/modules/bi"
@@ -335,10 +336,9 @@ func getMetadata(c *gin.Context) {
 		return
 	}
 
-	Log(NOTICE, "%#v", meta)
-
 	possibleVals := make([]string, 0)
-	metaField := convert.ToBSONMap(meta[rule.ValueField])
+
+	metaField := convert.ToBSONMap(bsonutil.FindDeepValueInMap(rule.ValueField, meta))
 	for value, existsRaw := range metaField {
 		exists, ok := existsRaw.(bool)
 		if !ok {

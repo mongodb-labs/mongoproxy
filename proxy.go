@@ -27,7 +27,7 @@ func ParseConfigFromFile(configFilename string) (bson.M, error) {
 
 	err = json.Unmarshal(file, &result)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid JSON Configuration: %v", err)
+		return nil, fmt.Errorf("Invalid JSON Configuration %v: %v", configFilename, err)
 	}
 	return result, nil
 }

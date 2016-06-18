@@ -3,9 +3,9 @@
 package mockule
 
 import (
-	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/server"
+	. "github.com/mongodb-labs/mongoproxy/log"
+	"github.com/mongodb-labs/mongoproxy/messages"
+	"github.com/mongodb-labs/mongoproxy/server"
 	"gopkg.in/mgo.v2/bson"
 	"math/rand"
 	"strconv"

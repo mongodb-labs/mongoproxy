@@ -83,7 +83,7 @@ Modules also have to be added to the registry in order for the server to know th
 
 	server.Publish(<Module>)
 
-where `server` is the imported `github.com/mongodbinc-interns/mongoproxy/server` package.
+where `server` is the imported `github.com/mongodb-labs/mongoproxy/server` package.
 
 Then, in the `server/registry.go` file, add the import path of the module to the file preceded by an underscore, to add the module to the registry.
 
@@ -92,8 +92,8 @@ Then, in the `server/registry.go` file, add the import path of the module to the
 	package examplemodule
 
 	import (
-		"github.com/mongodbinc-interns/mongoproxy/messages"
-		"github.com/mongodbinc-interns/mongoproxy/server"
+		"github.com/mongodb-labs/mongoproxy/messages"
+		"github.com/mongodb-labs/mongoproxy/server"
 		"gopkg.in/mgo.v2/bson"
 	)
 

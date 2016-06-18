@@ -4,11 +4,11 @@ package bi
 
 import (
 	"fmt"
-	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
-	"github.com/mongodbinc-interns/mongoproxy/convert"
-	. "github.com/mongodbinc-interns/mongoproxy/log"
-	"github.com/mongodbinc-interns/mongoproxy/messages"
-	"github.com/mongodbinc-interns/mongoproxy/server"
+	"github.com/mongodb-labs/mongoproxy/bsonutil"
+	"github.com/mongodb-labs/mongoproxy/convert"
+	. "github.com/mongodb-labs/mongoproxy/log"
+	"github.com/mongodb-labs/mongoproxy/messages"
+	"github.com/mongodb-labs/mongoproxy/server"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"

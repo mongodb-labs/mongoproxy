@@ -3,7 +3,7 @@ package frontend
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodbinc-interns/mongoproxy/modules/bi/frontend/controllers"
+	"github.com/mongodb-labs/mongoproxy/modules/bi/frontend/controllers"
 	"gopkg.in/mgo.v2/bson"
 	"html/template"
 )

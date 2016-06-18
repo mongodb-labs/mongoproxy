@@ -1,7 +1,7 @@
 package convert
 
 import (
-	. "github.com/mongodbinc-interns/mongoproxy/log"
+	. "github.com/mongodb-labs/mongoproxy/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

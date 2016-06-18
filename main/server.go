@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/mongodbinc-interns/mongoproxy"
-	. "github.com/mongodbinc-interns/mongoproxy/log"
+	"github.com/mongodb-labs/mongoproxy"
+	. "github.com/mongodb-labs/mongoproxy/log"
 	"gopkg.in/mgo.v2/bson"
 )
 

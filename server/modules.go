@@ -3,7 +3,7 @@
 package server
 
 import (
-	"github.com/mongodbinc-interns/mongoproxy/messages"
+	"github.com/mongodb-labs/mongoproxy/messages"
 	"gopkg.in/mgo.v2/bson"
 )
 

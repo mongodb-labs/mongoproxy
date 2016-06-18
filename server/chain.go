@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/mongodbinc-interns/mongoproxy/messages"
+	"github.com/mongodb-labs/mongoproxy/messages"
 )
 
 // PipelineFunc is the function type for the built pipeline, and is called

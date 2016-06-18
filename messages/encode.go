@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/mongodbinc-interns/mongoproxy/buffer"
-	. "github.com/mongodbinc-interns/mongoproxy/log"
+	"github.com/mongodb-labs/mongoproxy/buffer"
+	. "github.com/mongodb-labs/mongoproxy/log"
 	"gopkg.in/mgo.v2/bson"
 )
 

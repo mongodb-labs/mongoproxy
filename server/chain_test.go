@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/mongodbinc-interns/mongoproxy/messages"
+	"github.com/mongodb-labs/mongoproxy/messages"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/mgo.v2/bson"
 	"testing"

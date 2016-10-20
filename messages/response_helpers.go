@@ -25,18 +25,58 @@ type CommandResponse struct {
 	Metadata  bson.M
 	Reply     bson.M
 	Documents []bson.D
+	OpCmd     bool
 }
 
 func (c CommandResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	resHeader := createResponseHeader(header)
-	startingFrom := int32(0)
-
-	flags := int32(8)
 
 	buf := bytes.NewBuffer([]byte{})
 
+	if c.OpCmd {
+		resHeader.OpCode = OP_COMMANDREPLY
+		err := buffer.WriteToBuf(buf, resHeader)
+		if err != nil {
+			return nil, fmt.Errorf("error writing prepared response: %v", err)
+		}
+
+		// commandReply
+		replyBytes, err := marshalReplyDocs(c.Reply, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling reply: %v", err)
+		}
+
+		err = buffer.WriteToBuf(buf, replyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error writing reply: %v", err)
+		}
+
+		// metadata
+		metadataBytes, err := marshalReplyDocs(c.Metadata, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling metadata: %v", err)
+		}
+
+		err = buffer.WriteToBuf(buf, metadataBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error writing metadata: %v", err)
+		}
+
+		// documents
+		docBytes, err := marshalReplyDocs(nil, c.Documents)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling documents: %v", err)
+		}
+
+		resp := append(buf.Bytes(), docBytes...)
+
+		resp = setMessageSize(resp)
+
+		return resp, nil
+	}
+
 	// write all documents
-	err := buffer.WriteToBuf(buf, resHeader, int32(flags), int64(0), int32(startingFrom),
+	err := buffer.WriteToBuf(buf, resHeader, int32(8), int64(0), int32(0),
 		int32(1+len(c.Documents)))
 	if err != nil {
 		return nil, fmt.Errorf("error writing prepared response: %v", err)
@@ -50,9 +90,8 @@ func (c CommandResponse) ToBytes(header MsgHeader) ([]byte, error) {
 
 	resp := append(buf.Bytes(), docBytes...)
 
-	resp = setMessageSize(resp)
+	return setMessageSize(resp), nil
 
-	return resp, nil
 }
 
 func (c CommandResponse) ToBSON() bson.M {
@@ -106,6 +145,7 @@ func (f FindResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error writing prepared response: %v", err)
 	}
+
 	docBytes, err := marshalReplyDocs(nil, f.Documents)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling documents: %v", err)
@@ -208,7 +248,7 @@ type InsertResponse struct {
 func (i InsertResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	b := i.ToBSON()
 	b["ok"] = 1
-	return EncodeBSON(header, b)
+	return EncodeBSON(header, b, false)
 }
 
 func (i InsertResponse) ToBSON() bson.M {
@@ -246,7 +286,7 @@ type UpdateResponse struct {
 func (u UpdateResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	b := u.ToBSON()
 	b["ok"] = 1
-	return EncodeBSON(header, b)
+	return EncodeBSON(header, b, false)
 }
 
 func (u UpdateResponse) ToBSON() bson.M {
@@ -279,7 +319,7 @@ type DeleteResponse struct {
 func (d DeleteResponse) ToBytes(header MsgHeader) ([]byte, error) {
 	b := d.ToBSON()
 	b["ok"] = 1
-	return EncodeBSON(header, b)
+	return EncodeBSON(header, b, false)
 }
 
 func (d DeleteResponse) ToBSON() bson.M {

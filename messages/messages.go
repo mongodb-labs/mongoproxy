@@ -8,11 +8,14 @@ import (
 
 // constants representing the different opcodes for the wire protocol.
 const (
-	OP_UPDATE   int32 = 2001
-	OP_INSERT         = 2002
-	OP_QUERY          = 2004
-	OP_GET_MORE       = 2005
-	OP_DELETE         = 2006
+	OP_REPLY        int32 = 1
+	OP_UPDATE             = 2001
+	OP_INSERT             = 2002
+	OP_QUERY              = 2004
+	OP_GET_MORE           = 2005
+	OP_DELETE             = 2006
+	OP_COMMAND            = 2010
+	OP_COMMANDREPLY       = 2011
 )
 
 // constants representing the types of request structs supported by proxy core.
@@ -42,6 +45,7 @@ type Command struct {
 	Args        bson.M
 	Metadata    bson.M
 	Docs        []bson.D
+	OpCmd       bool `bson:,omitempty` // indicates if this is a command generated from OP_COMMAND
 }
 
 func (c Command) Type() string {

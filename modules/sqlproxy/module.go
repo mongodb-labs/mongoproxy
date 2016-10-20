@@ -4,7 +4,14 @@ package sqlproxy
 import (
 	"fmt"
 	"github.com/10gen/sqlproxy"
+	"github.com/10gen/sqlproxy/catalog"
+	"github.com/10gen/sqlproxy/evaluator"
+	"github.com/10gen/sqlproxy/log"
+	"github.com/10gen/sqlproxy/mongodb"
+	"github.com/10gen/sqlproxy/options"
+	"github.com/10gen/sqlproxy/parser"
 	"github.com/10gen/sqlproxy/schema"
+	"github.com/10gen/sqlproxy/variable"
 	"github.com/mongodbinc-interns/mongoproxy/bsonutil"
 	"github.com/mongodbinc-interns/mongoproxy/convert"
 	. "github.com/mongodbinc-interns/mongoproxy/log"
@@ -12,6 +19,7 @@ import (
 	"github.com/mongodbinc-interns/mongoproxy/server"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/tomb.v2"
 )
 
 // A SQLProxyModule takes the request, sends it to a SQLProxy instance, and then
@@ -20,7 +28,7 @@ import (
 type SQLProxyModule struct {
 	evaluator *sqlproxy.Evaluator
 	schema    *schema.Schema
-	addr      string
+	conn      *connCtx
 }
 
 func init() {
@@ -40,7 +48,6 @@ func (s *SQLProxyModule) Configure(conf bson.M) error {
 	if !ok {
 		return fmt.Errorf("Invalid addresses: address is not a string")
 	}
-	s.addr = addr
 
 	schemaStr, ok := conf["schema"].(string)
 	if !ok {
@@ -53,7 +60,12 @@ func (s *SQLProxyModule) Configure(conf bson.M) error {
 		return fmt.Errorf("Error parsing schema file: %v", err)
 	}
 
-	opts := sqlproxy.Options{Addr: addr}
+	opts, err := options.NewSqldOptions()
+	if err != nil {
+		return fmt.Errorf("Error creating options: %v", err)
+	}
+
+	opts.SqldClientConnection.Addr = addr
 
 	evaluator, err := sqlproxy.NewEvaluator(cfg, opts)
 	if err != nil {
@@ -64,41 +76,81 @@ func (s *SQLProxyModule) Configure(conf bson.M) error {
 
 	s.schema = cfg
 
+	session := s.evaluator.Session()
+	logger := log.NewLogger(nil)
+	variables := variable.NewSessionContainer(variable.NewGlobalContainer())
+	variables.MongoDBInfo, err = mongodb.LoadInfo(session, cfg, false)
+	if err != nil {
+		return fmt.Errorf("error retrieving information from MongoDB: %v", err)
+	}
+	ctlog, err := catalog.Build(cfg, variables)
+	if err != nil {
+		return fmt.Errorf("error building catalog: %v", err)
+	}
+
+	s.conn = &connCtx{session: session, variables: variables, logger: logger, catalog: ctlog}
+
 	return nil
 }
 
 type connCtx struct {
-	db      string
-	session *mgo.Session
+	db        string
+	session   *mgo.Session
+	catalog   *catalog.Catalog
+	logger    *log.Logger
+	variables *variable.Container
 }
 
-func (c *connCtx) LastInsertId() int64 {
+func (c connCtx) LastInsertId() int64 {
 	return int64(0)
 }
 
-func (c *connCtx) RowCount() int64 {
+func (c connCtx) RowCount() int64 {
 	return int64(0)
 }
 
-func (c *connCtx) ConnectionId() uint32 {
+func (c connCtx) ConnectionId() uint32 {
 	return uint32(0)
 }
 
-func (c *connCtx) DB() string {
+func (c connCtx) DB() string {
 	return c.db
 }
-func (c *connCtx) Session() *mgo.Session {
+
+func (c connCtx) Session() *mgo.Session {
 	return c.session
+}
+
+func (c connCtx) Kill(id uint32, ks evaluator.KillScope) error {
+	return nil
+}
+
+func (c connCtx) Logger(cmp string) *log.Logger {
+	return c.logger
+}
+
+func (c connCtx) Tomb() *tomb.Tomb /* TODO */ {
+	return &tomb.Tomb{}
+}
+
+func (c connCtx) User() string /* TODO */ {
+	return ""
+}
+
+func (c connCtx) Catalog() *catalog.Catalog /* TODO */ {
+	return c.catalog
+}
+
+func (c connCtx) Variables() *variable.Container /* TODO */ {
+	return c.variables
 }
 
 func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 	next server.PipelineFunc) {
-
 	session := s.evaluator.Session()
 
 	switch req.Type() {
 	case messages.CommandType:
-
 		command, err := messages.ToCommandRequest(req)
 		if err != nil {
 			Log(WARNING, "Error converting to command: %#v", err)
@@ -108,6 +160,7 @@ func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 		}
 
 		b := command.ToBSON()
+		s.conn.db = command.Database
 
 		switch command.CommandName {
 		case "sql":
@@ -119,23 +172,32 @@ func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 				return
 			}
 
-			conn := &connCtx{db: command.Database, session: session}
+			stmt, err := parser.Parse(query)
+			if err != nil {
+				err := fmt.Errorf(`parse sql '%s' error: %s`, query, err)
+				Log(WARNING, err.Error())
+				res.Error(9003, err.Error())
+				next(req, res)
+				return
+			}
 
-			headers, resultSet, err := s.evaluator.EvalSelect(command.Database, query, nil, conn)
+			headers, iter, err := s.evaluator.Evaluate(stmt, s.conn)
 			if err != nil {
 				Log(WARNING, "error running SQL query: %v", err)
-				res.Error(9003, fmt.Sprintf("error running SQL query: %v", err))
+				res.Error(9004, fmt.Sprintf("error running SQL query: %v", err))
 				next(req, res)
 				return
 			}
 
 			var results []bson.M
 
-			for _, fields := range resultSet {
+			evaluatorRow := &evaluator.Row{}
+			for iter.Next(evaluatorRow) {
 				result := bson.M{}
-				for j, field := range fields {
-					result[headers[j]] = field
+				for j, data := range evaluatorRow.Data {
+					result[headers[j].Name] = data.Data
 				}
+				evaluatorRow.Data = evaluator.Values{}
 				results = append(results, result)
 			}
 
@@ -146,6 +208,7 @@ func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 
 			response := messages.CommandResponse{
 				Reply: reply,
+				OpCmd: command.OpCmd,
 			}
 
 			res.Write(response)
@@ -155,9 +218,10 @@ func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 			reply := bson.M{}
 			err = session.DB(command.Database).Run(b, reply)
 			if err != nil {
+				Log(DEBUG, "Error running command: %v", err)
+
 				// log an error if we can
 				qErr, ok := err.(*mgo.QueryError)
-				Log(WARNING, "Error running command %v: %v", command.CommandName, err)
 				if ok {
 					res.Error(int32(qErr.Code), qErr.Message)
 				} else {
@@ -169,15 +233,17 @@ func (s *SQLProxyModule) Process(req messages.Requester, res messages.Responder,
 
 			response := messages.CommandResponse{
 				Reply: reply,
+				OpCmd: command.OpCmd,
 			}
 
 			if convert.ToInt(reply["ok"]) == 0 {
+				Log(DEBUG, "command reply is: %#v", reply)
+
 				// we have a command error.
 				res.Error(convert.ToInt32(reply["code"]), convert.ToString(reply["errmsg"]))
 				next(req, res)
 				return
 			}
-
 			res.Write(response)
 		}
 	case messages.InsertType:

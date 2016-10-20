@@ -460,6 +460,8 @@ func (d *decoder) readElemTo(out reflect.Value, kind byte) (good bool) {
 				out.Set(d.readDocElems(outt))
 			case typeRawDocElem:
 				out.Set(d.readRawDocElems(outt))
+			default:
+				d.readDocTo(blackHole)
 			}
 			return true
 		}
@@ -537,6 +539,11 @@ func (d *decoder) readElemTo(out reflect.Value, kind byte) (good bool) {
 		in = MongoTimestamp(d.readInt64())
 	case 0x12: // Int64
 		in = d.readInt64()
+	case 0x13: // Decimal128
+		in = Decimal128{
+			l: uint64(d.readInt64()),
+			h: uint64(d.readInt64()),
+		}
 	case 0x7F: // Max key
 		in = MaxKey
 	case 0xFF: // Min key
@@ -727,6 +734,12 @@ func (d *decoder) readElemTo(out reflect.Value, kind byte) (good bool) {
 			out.Set(reflect.ValueOf(u).Elem())
 			return true
 		}
+		if outt == typeBinary {
+			if b, ok := in.([]byte); ok {
+				out.Set(reflect.ValueOf(Binary{Data: b}))
+				return true
+			}
+		}
 	}
 
 	return false
@@ -780,10 +793,14 @@ func (d *decoder) readCStr() string {
 }
 
 func (d *decoder) readBool() bool {
-	if d.readByte() == 1 {
+	b := d.readByte()
+	if b == 0 {
+		return false
+	}
+	if b == 1 {
 		return true
 	}
-	return false
+	panic(fmt.Sprintf("encoded boolean must be 1 or 0, found %d", b))
 }
 
 func (d *decoder) readFloat64() float64 {

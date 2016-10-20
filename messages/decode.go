@@ -49,13 +49,22 @@ func ParseNamespace(namespace string) (string, string, error) {
 	return database, collection, nil
 }
 
-func createCommand(header MsgHeader, commandName string, database string, args bson.M) Command {
+func createCommand(header MsgHeader, commandName string, database string, args, metadata bson.M, docs []bson.D, opCmd bool) Command {
 	c := Command{
 		RequestID:   header.RequestID,
 		CommandName: commandName,
 		Database:    database,
 		Args:        args,
+		Metadata:    metadata,
+		Docs:        docs,
+		OpCmd:       opCmd,
 	}
+
+	// MongoDB bugs out if we supply the client metadata document more than once
+	if commandName == "isMaster" && c.RequestID == 0 {
+		c.Args = bson.M{}
+	}
+
 	return c
 }
 
@@ -358,7 +367,7 @@ func processOpQuery(reader io.Reader, header MsgHeader) (Requester, error) {
 				return nil, err
 			}
 		default:
-			c = createCommand(header, cName, database, args)
+			c = createCommand(header, cName, database, args, bson.M{}, []bson.D{}, false)
 		}
 
 		return c, nil
@@ -534,6 +543,61 @@ func processOpGetMore(reader io.Reader, header MsgHeader) (Requester, error) {
 	return createGetMore(header, database, args)
 }
 
+// OpCode 2010
+func processOpCommand(reader io.Reader, header MsgHeader) (Requester, error) {
+	// cut off the string at the remaining message length in case it is not
+	// null terminated.
+	maxStringBytes := header.MessageLength - 16 // bytes representing the header
+
+	// database
+	numBytes, database, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error reading null terminated string: %v", err)
+	}
+
+	maxStringBytes -= numBytes
+
+	// command name
+	numBytes, commandName, err := buffer.ReadNullTerminatedString(reader, maxStringBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error reading command name: %v", err)
+	}
+
+	maxStringBytes -= numBytes
+
+	// command args
+	numBytes, args, err := buffer.ReadDocument(reader)
+	if err != nil {
+		return nil, fmt.Errorf("error reading command args: %v", err)
+	}
+
+	maxStringBytes -= numBytes
+
+	// metadata
+	numBytes, metadata, err := buffer.ReadDocument(reader)
+	if err != nil {
+		return nil, fmt.Errorf("error reading metadata: %v", err)
+	}
+
+	maxStringBytes -= numBytes
+
+	docs := []bson.D{}
+
+	// input docs
+	for err == nil && maxStringBytes > 0 {
+		_, doc, err := buffer.ReadDocument(reader)
+		if err == nil {
+			docs = append(docs, doc)
+		}
+	}
+
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("error reading input docs: %v", err)
+	}
+
+	return createCommand(header, commandName, database, args.Map(), metadata.Map(), docs, true), nil
+}
+
 // OpCode 2006
 func processOpDelete(reader io.Reader, header MsgHeader) (Requester, error) {
 	buffer.ReadInt32LE(reader) // the zero (not used in wire protocol)
@@ -627,6 +691,12 @@ func Decode(reader io.Reader) (Requester, MsgHeader, error) {
 			return nil, MsgHeader{}, err
 		}
 		return opd, mHeader, nil
+	case OP_COMMAND:
+		opc, err := processOpCommand(reader, mHeader)
+		if err != nil {
+			return nil, MsgHeader{}, err
+		}
+		return opc, mHeader, nil
 	default:
 		return nil, MsgHeader{}, fmt.Errorf("unimplemented operation: %#v", mHeader)
 	}

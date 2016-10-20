@@ -128,6 +128,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 		b := command.ToBSON()
 
 		reply := bson.M{}
+
 		err = session.DB(command.Database).Run(b, reply)
 		if err != nil {
 			// log an error if we can
@@ -144,6 +145,7 @@ func (m *MongodModule) Process(req messages.Requester, res messages.Responder,
 
 		response := messages.CommandResponse{
 			Reply: reply,
+			OpCmd: command.OpCmd,
 		}
 
 		if convert.ToInt(reply["ok"]) == 0 {

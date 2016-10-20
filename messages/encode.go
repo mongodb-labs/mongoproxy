@@ -38,7 +38,7 @@ func marshalReplyDocs(reply interface{}, docs []bson.D) ([]byte, error) {
 func createResponseHeader(reqHeader MsgHeader) MsgHeader {
 	mHeader := MsgHeader{
 		ResponseTo: reqHeader.RequestID, // requestID from the original request
-		OpCode:     1,
+		OpCode:     OP_REPLY,
 	}
 	return mHeader
 }
@@ -60,8 +60,52 @@ func setMessageSize(resp []byte) []byte {
 // find or getMore command responses, as it disregards some flags that are important
 // to those two commands.
 // http://docs.mongodb.org/meta-driver/latest/legacy/mongodb-wire-protocol/
-func EncodeBSON(reqHeader MsgHeader, b bson.M) ([]byte, error) {
+func EncodeBSON(reqHeader MsgHeader, b bson.M, isOpCmdRes bool) ([]byte, error) {
 	resHeader := createResponseHeader(reqHeader)
+
+	buf := bytes.NewBuffer([]byte{})
+
+	if isOpCmdRes {
+		resHeader.OpCode = OP_COMMANDREPLY
+		err := buffer.WriteToBuf(buf, resHeader)
+		if err != nil {
+			return nil, fmt.Errorf("error writing prepared response: %v", err)
+		}
+
+		// commandReply
+		replyBytes, err := marshalReplyDocs(b, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling reply: %v", err)
+		}
+
+		err = buffer.WriteToBuf(buf, replyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error writing reply: %v", err)
+		}
+
+		// metadata
+		metadataBytes, err := marshalReplyDocs(bson.M{}, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling metadata: %v", err)
+		}
+
+		err = buffer.WriteToBuf(buf, metadataBytes)
+		if err != nil {
+			return nil, fmt.Errorf("error writing metadata: %v", err)
+		}
+
+		// documents
+		docBytes, err := marshalReplyDocs(nil, []bson.D{})
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling documents: %v", err)
+		}
+
+		resp := append(buf.Bytes(), docBytes...)
+
+		resp = setMessageSize(resp)
+
+		return resp, nil
+	}
 
 	// we just return 1 object, which is b.
 	numberReturned := 1
@@ -72,7 +116,6 @@ func EncodeBSON(reqHeader MsgHeader, b bson.M) ([]byte, error) {
 	// we should have ways to change it, though.
 	flags := int32(8)
 
-	buf := bytes.NewBuffer([]byte{})
 	err := buffer.WriteToBuf(buf, resHeader, int32(flags),
 		int64(0),              // cursorID. Not used for generic command responses
 		int32(0),              // startingFrom. Not used for generic command responses
@@ -108,7 +151,11 @@ func Encode(reqHeader MsgHeader, res ModuleResponse) ([]byte, error) {
 		r["errmsg"] = res.CommandError.Message
 		r["code"] = res.CommandError.ErrorCode
 
-		return EncodeBSON(reqHeader, r)
+		isOpCmdRes := false
+		if cr, ok := res.Writer.(CommandResponse); ok {
+			isOpCmdRes = cr.OpCmd
+		}
+		return EncodeBSON(reqHeader, r, isOpCmdRes)
 	}
 
 	if res.Writer == nil {
